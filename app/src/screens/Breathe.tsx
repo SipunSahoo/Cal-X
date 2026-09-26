@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { cycleSeconds, mmss, phaseText, sequenceSeconds, stepSeconds, type BreathPattern, type BreathSequence, type BreathState } from '../data/breathing'
+import { DEFAULT_BREATH, cycleSeconds, mmss, phaseText, sequenceSeconds, stepSeconds, type BreathPattern, type BreathSequence, type BreathState } from '../data/breathing'
 import { canVibrate, cue, unlockCues } from '../engine/cues'
 import { Icon, PATTERN_ICON } from '../icons'
 import { setState, useStore } from '../store'
@@ -15,6 +15,8 @@ export default function Breathe() {
   const [editSeq, setEditSeq] = useState<BreathSequence | null>(null)
   const [editPat, setEditPat] = useState<BreathPattern | null>(null)
   const pat = (id: string) => b.patterns.find(p => p.id === id)
+  const missingPat = DEFAULT_BREATH.patterns.filter(p => !b.patterns.some(x => x.id === p.id))
+  const missingSeq = DEFAULT_BREATH.sequences.filter(q => !b.sequences.some(x => x.id === q.id))
 
   if (playing) return <BreathPlayer seq={playing} onClose={() => setPlaying(null)} />
   if (editSeq) return <SequenceEditor initial={editSeq} onClose={() => setEditSeq(null)} />
@@ -53,6 +55,13 @@ export default function Breathe() {
           )
         })}
       </section>
+
+      {(missingPat.length > 0 || missingSeq.length > 0) && (
+        <button className="tile row" style={{ marginTop: 10, borderStyle: 'dashed' }} onClick={() => setBreath(x => ({ ...x, patterns: [...x.patterns, ...missingPat], sequences: [...x.sequences, ...missingSeq] }))}>
+          <span className="ico breath"><Icon name="restart" /></span>
+          <span className="grow"><span className="t">Restore presets</span><div className="d">Adds back {[...missingSeq, ...missingPat].map(x => x.name).join(', ')}</div></span>
+        </button>
+      )}
 
       <section className="section">
         <div className="section-head"><h2>Patterns</h2><span className="tag">in · hold · out · hold</span></div>

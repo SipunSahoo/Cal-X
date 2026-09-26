@@ -35,7 +35,7 @@ button:disabled { opacity: .4; cursor: default }
 a { color: inherit }
 
 /* app shell: the page scrolls inside <main>, the tab bar is a normal row → it never jumps */
-.shell { height: 100%; display: flex; flex-direction: column }
+.shell { position: fixed; inset: 0; display: flex; flex-direction: column } /* fixed to the real screen edges (iOS home-screen apps mis-size 100% height) */
 .screen { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 28px }
 .screen > * { max-width: 520px; margin-inline: auto }
@@ -44,7 +44,8 @@ a { color: inherit }
 .full > * { max-width: 520px; margin-inline: auto; width: 100% }
 
 .tabs { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  height: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
+  --tabs-pad: max(6px, calc(env(safe-area-inset-bottom, 0px) - 16px)); /* sit just above the home indicator */
+  height: calc(var(--tabs-h) + var(--tabs-pad)); padding-bottom: var(--tabs-pad);
   background: var(--bg); border-top: 1px solid var(--line) }
 .tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 500; color: var(--muted) }
 .tabs button[aria-current="page"] { color: var(--accent) }
