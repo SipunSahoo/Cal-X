@@ -51,11 +51,3 @@ export function Stepper({ value, onChange, min = 0, max = 999, step = 1, suffix 
     </span>
   )
 }
-
-export const TAB_ICONS: Record<string, ReactNode> = {
-  today: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
-  skills: <><circle cx="12" cy="5" r="2.5" /><circle cx="6" cy="19" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="M12 7.5v4l-6 5M12 11.5l6 5" /></>,
-  breathe: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3.5" /></>,
-  progress: <path d="M4 20V11M10 20V5M16 20v-6M2 20h20" />,
-  you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
-}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { EX, TRACKS, WEEK } from '../data/catalog'
 import { addDays, bests, dayKey, parseDay, unit, weekStreak } from '../engine/progression'
 import { useStore } from '../store'
-import { Stat } from '../ui'
+import { Icon, exIcon } from '../icons'
 
 const WEEKS = 10
 
@@ -17,7 +17,7 @@ export default function Progress() {
   if (!s.sessions.length) return (
     <>
       <div className="tag">Progress</div><h1 style={{ marginTop: 4 }}>Your story starts here</h1>
-      <div className="card" style={{ marginTop: 16 }}><p className="muted" style={{ margin: 0 }}>Finish your first workout and this page fills with records, charts and your consistency calendar.</p></div>
+      <div className="tile row" style={{ marginTop: 16 }}><span className="ico muted"><Icon name="progress" /></span><p className="muted grow" style={{ margin: 0 }}>Finish your first workout and this page fills with records, charts and your consistency calendar.</p></div>
     </>
   )
 
@@ -60,28 +60,28 @@ export default function Progress() {
 
   return (
     <>
-      <div className="eyebrow">Progress</div>
-      <h1 style={{ marginTop: 4 }}>Since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</h1>
-      <div className="stats" style={{ marginTop: 14 }}>
-        <Stat value={s.sessions.length} label="workouts" />
-        <Stat value={weekStreak(s)} label="week streak" />
-        <Stat value={`${thisWeek}/3`} label="this week" />
+      <div className="eyebrow">Since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</div>
+      <h1 style={{ marginTop: 2 }}>Progress</h1>
+      <div className="grid3" style={{ marginTop: 16 }}>
+        {([['dumbbell', s.sessions.length, 'workouts'], ['flame', weekStreak(s), 'week streak'], ['calendar', `${thisWeek}/3`, 'this week']] as const).map(([ic, v, l]) => (
+          <div key={l} className="tile"><span className="ico sm"><Icon name={ic} size={18} /></span><span><div className="n">{v}</div><div className="d">{l}</div></span></div>
+        ))}
       </div>
 
       <div className="section">
-        <div className="row between"><div className="eyebrow">Consistency</div>
+        <div className="section-head"><h2>Consistency</h2>
           <div className="row small muted" style={{ gap: 8 }}><span style={{ color: 'var(--accent)' }}>■</span>Strength<span style={{ color: 'var(--breath)' }}>■</span>Yoga<span style={{ color: 'var(--bad)' }}>▢</span>Missed</div></div>
         <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, k) => <span key={k} className="small muted" style={{ textAlign: 'center' }}>{d}</span>)}
-            {cells.map(c => <i key={c.key} title={c.key} style={{ aspectRatio: '1', borderRadius: 1, background: CELL[c.kind as keyof typeof CELL],
+            {cells.map(c => <i key={c.key} title={c.key} style={{ aspectRatio: '1', borderRadius: 4, background: CELL[c.kind as keyof typeof CELL],
               border: c.kind === 'miss' ? '1px dashed var(--bad)' : c.key === todayKey ? '1px solid var(--text)' : '1px solid transparent' }} />)}
           </div>
         </div>
       </div>
 
       <div className="section">
-        <div className="eyebrow">Best set per session</div>
+        <div className="section-head"><h2>Best set per session</h2></div>
         <div className="row scroll-x" style={{ gap: 6 }}>
           {TRACKS.map(t => <button key={t.id} className={`chip ${t.id === trackId ? 'on' : ''}`} onClick={() => setTrackId(t.id)}>{t.name}</button>)}
         </div>
@@ -102,23 +102,26 @@ export default function Progress() {
       </div>
 
       <div className="section">
-        <div className="eyebrow">Personal records</div>
-        <div className="card list">
+        <div className="section-head"><h2>Personal records</h2></div>
+        <div className="grid2">
           {Object.entries(best).map(([id, b]) => (
-            <div className="item" key={id}><span className="grow">{EX[id]?.name ?? id}<div className="small muted">{parseDay(b.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div></span>
-              <span className="num" style={{ fontSize: 22 }}>{b.value} <span className="small muted">{EX[id] && unit(EX[id]) ? 'sec' : 'reps'}</span></span></div>
+            <div className="tile" key={id}>
+              <span className="row between"><span className="ico sm"><Icon name={EX[id] ? exIcon(EX[id]) : 'target'} size={18} /></span>
+                <span className="n">{b.value}<span className="d" style={{ fontWeight: 400 }}> {EX[id] && unit(EX[id]) ? 'sec' : 'reps'}</span></span></span>
+              <span><div className="t">{EX[id]?.name ?? id}</div><div className="d">{parseDay(b.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div></span>
+            </div>
           ))}
         </div>
       </div>
 
       <div className="section">
-        <div className="eyebrow">Milestones</div>
-        <div className="card list">
+        <div className="section-head"><h2>Milestones</h2><span className="tag">{milestones.filter(([, p]) => p >= 1).length}/{milestones.length}</span></div>
+        <div className="grid2">
           {milestones.map(([l, p]) => (
-            <div className="item" key={l}>
-              <span className={`check ${p >= 1 ? 'good' : ''}`}>{p >= 1 ? '✓' : ''}</span>
-              <span className="grow"><span style={{ color: p >= 1 ? undefined : 'var(--muted)' }}>{l}</span>
-                {p > 0 && p < 1 && <span className="bar" style={{ display: 'block', marginTop: 6 }}><i style={{ width: `${p * 100}%` }} /></span>}</span>
+            <div className={`tile ${p >= 1 ? 'on' : ''}`} key={l}>
+              <span className={`ico sm ${p >= 1 ? 'good' : 'muted'}`}><Icon name={p >= 1 ? 'trophy' : 'target'} size={18} /></span>
+              <span><div className="t" style={{ color: p >= 1 ? undefined : 'var(--muted)' }}>{l}</div>
+                {p < 1 && <div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${p * 100}%` }} /></div>}</span>
             </div>
           ))}
         </div>

@@ -1,47 +1,47 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { useStore } from './store'
-import { TAB_ICONS, Toaster } from './ui'
+import { Toaster } from './ui'
+import { Icon } from './icons'
 import Today from './screens/Today'
 import Skills from './screens/Skills'
+import Breathe from './screens/Breathe'
+import Progress from './screens/Progress'
+import You from './screens/You'
 
-// Loaded on first use to keep startup small.
+// Only the one-off screens load on demand; tabs load up front so switching is instant.
 const Onboarding = lazy(() => import('./screens/Onboarding'))
 const Workout = lazy(() => import('./screens/Workout'))
-const Breathe = lazy(() => import('./screens/Breathe'))
-const Progress = lazy(() => import('./screens/Progress'))
-const You = lazy(() => import('./screens/You'))
 
 type Tab = 'today' | 'skills' | 'breathe' | 'progress' | 'you'
-const TABS: [Tab, string][] = [['today', 'Today'], ['skills', 'Skills'], ['breathe', 'Breathe'], ['progress', 'Progress'], ['you', 'You']]
+const TABS: [Tab, string, string][] = [['today', 'Today', 'today'], ['skills', 'Skills', 'skills'], ['breathe', 'Breathe', 'breath'], ['progress', 'Progress', 'progress'], ['you', 'You', 'you']]
 
 export default function App() {
   const s = useStore()
   const [tab, setTab] = useState<Tab>('today')
   const [training, setTraining] = useState(false)
-  const go = (t: Tab) => { setTab(t); window.scrollTo(0, 0) }
+  const main = useRef<HTMLElement>(null)
+  const go = (t: Tab) => { setTab(t); main.current?.scrollTo(0, 0) }
 
   if (!s.onboarded) return <Suspense><Onboarding /><Toaster /></Suspense>
 
   return (
-    <>
-      <main className="screen">
-        <Suspense>
-          {tab === 'today' && <Today onStart={() => setTraining(true)} onBreathe={() => go('breathe')} />}
-          {tab === 'skills' && <Skills />}
-          {tab === 'breathe' && <Breathe />}
-          {tab === 'progress' && <Progress />}
-          {tab === 'you' && <You />}
-        </Suspense>
+    <div className="shell">
+      <main className="screen" ref={main}>
+        {tab === 'today' && <Today onStart={() => setTraining(true)} onBreathe={() => go('breathe')} />}
+        {tab === 'skills' && <Skills />}
+        {tab === 'breathe' && <Breathe />}
+        {tab === 'progress' && <Progress />}
+        {tab === 'you' && <You />}
       </main>
       <nav className="tabs">
-        {TABS.map(([id, label]) => (
+        {TABS.map(([id, label, icon]) => (
           <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => go(id)}>
-            <svg viewBox="0 0 24 24">{TAB_ICONS[id]}</svg>{label}
+            <Icon name={icon} size={22} />{label}
           </button>
         ))}
       </nav>
       {training && <Suspense><Workout onClose={() => setTraining(false)} /></Suspense>}
       <Toaster />
-    </>
+    </div>
   )
 }

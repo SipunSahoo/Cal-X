@@ -110,16 +110,16 @@ export const WEEK: DayPlan[] = [
 ]
 
 // One-tap check-offs. `on` limits an item to certain day kinds.
-export const CHECKS: { key: string; title: string; sub: string; group: 'session' | 'rhythm'; on?: DayKind[] }[] = [
-  { key: 'warm', title: 'Wrist prep + brick scapular presses', sub: '3 min', group: 'session', on: ['strength'] },
-  { key: 'sn_pre', title: 'Surya Namaskar · 5 crisp rounds', sub: '~4 min, 1 breath per movement', group: 'session', on: ['strength'] },
-  { key: 'sn_post', title: 'Surya Namaskar · 5 slow rounds', sub: '~6 min, knees down on the lowering', group: 'session', on: ['strength'] },
-  { key: 'ysec', title: 'Yoga sector', sub: '2–3 deep holds + counterpose, 8–10 min', group: 'session', on: ['strength'] },
-  { key: 'shav', title: 'Shavasana', sub: '5 min', group: 'session', on: ['strength', 'yoga'] },
-  { key: 'yoga', title: 'Hatha yoga session', sub: '35 min', group: 'session', on: ['yoga'] },
-  { key: 'morning', title: 'Morning sadhana', sub: 'Loosening 3m · Pranayama 10m · Dhyana 20–30m', group: 'rhythm' },
-  { key: 'evening', title: 'Evening', sub: '', group: 'rhythm' },
-  { key: 'night', title: 'Night sadhana', sub: '3 min slow Nadi Shodhana · Dhyana 20–30m', group: 'rhythm' },
+export const CHECKS: { key: string; short: string; title: string; sub: string; group: 'session' | 'rhythm'; on?: DayKind[] }[] = [
+  { key: 'warm', short: 'Wrist prep', title: 'Wrist prep + brick scapular presses', sub: '3 min', group: 'session', on: ['strength'] },
+  { key: 'sn_pre', short: 'Sun salutes', title: 'Surya Namaskar · 5 crisp rounds', sub: '~4 min, 1 breath per movement', group: 'session', on: ['strength'] },
+  { key: 'sn_post', short: 'Slow salutes', title: 'Surya Namaskar · 5 slow rounds', sub: '~6 min, knees down on the lowering', group: 'session', on: ['strength'] },
+  { key: 'ysec', short: 'Yoga holds', title: 'Yoga sector', sub: '2–3 deep holds + counterpose, 8–10 min', group: 'session', on: ['strength'] },
+  { key: 'shav', short: 'Shavasana', title: 'Shavasana', sub: '5 min', group: 'session', on: ['strength', 'yoga'] },
+  { key: 'yoga', short: 'Hatha yoga', title: 'Hatha yoga session', sub: '35 min', group: 'session', on: ['yoga'] },
+  { key: 'morning', short: 'Morning', title: 'Morning sadhana', sub: 'Loosening 3m · Pranayama 10m · Dhyana 20–30m', group: 'rhythm' },
+  { key: 'evening', short: 'Evening', title: 'Evening', sub: '', group: 'rhythm' },
+  { key: 'night', short: 'Night', title: 'Night sadhana', sub: '3 min slow Nadi Shodhana · Dhyana 20–30m', group: 'rhythm' },
 ]
 
 export const videoUrl = (name: string) =>

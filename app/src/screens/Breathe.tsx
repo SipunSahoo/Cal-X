@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { mmss, phaseText, sequenceSeconds, stepSeconds, type BreathPattern, type BreathSequence, type BreathState } from '../data/breathing'
-import { cue, unlockCues } from '../engine/cues'
+import { cycleSeconds, mmss, phaseText, sequenceSeconds, stepSeconds, type BreathPattern, type BreathSequence, type BreathState } from '../data/breathing'
+import { canVibrate, cue, unlockCues } from '../engine/cues'
+import { Icon, PATTERN_ICON } from '../icons'
 import { setState, useStore } from '../store'
 import { CheckRow, Sheet, Stepper } from '../ui'
 import BreathPlayer from './BreathPlayer'
@@ -13,66 +14,89 @@ export default function Breathe() {
   const [playing, setPlaying] = useState<BreathSequence | null>(null)
   const [editSeq, setEditSeq] = useState<BreathSequence | null>(null)
   const [editPat, setEditPat] = useState<BreathPattern | null>(null)
-
-  const summary = (seq: BreathSequence) => seq.steps.map(st => st.kind === 'pause' ? `pause ${st.seconds}s`
-    : `${b.patterns.find(p => p.id === st.patternId)?.name ?? '?'} ×${st.rounds}`).join(' · ')
+  const pat = (id: string) => b.patterns.find(p => p.id === id)
 
   if (playing) return <BreathPlayer seq={playing} onClose={() => setPlaying(null)} />
   if (editSeq) return <SequenceEditor initial={editSeq} onClose={() => setEditSeq(null)} />
 
   return (
     <>
-      <div className="tag">Breathe</div>
-      <h1 style={{ marginTop: 4 }}>Pranayama</h1>
-      <p className="small muted" style={{ margin: '6px 0 0' }}>Inhale · hold · exhale · hold. Keep the phone in your hand or in front of you. A tone and a buzz mark every phase change.</p>
+      <div className="eyebrow">Pranayama</div>
+      <h1 style={{ marginTop: 2 }}>Breathe</h1>
 
       <section className="section">
-        <div className="eyebrow">Sequences</div>
-        <div className="card list">
-          {b.sequences.map((seq, k) => (
-            <div key={seq.id} className="item">
-              <span className="idx">{pad(k + 1)}</span>
-              <button className="grow" onClick={() => setPlaying(seq)}>
-                <b style={{ fontWeight: 600 }}>{seq.name}</b>
-                <div className="small muted">{summary(seq) || 'No steps yet'}</div>
-              </button>
-              <span className="num" style={{ fontSize: 16 }}>{mmss(sequenceSeconds(seq, b.patterns))}</span>
-              <button className="chip" onClick={() => setEditSeq(seq)}>Edit</button>
+        <div className="section-head"><h2>Sequences</h2><button className="chip" onClick={() => setEditSeq({ id: `s-${Date.now()}`, name: 'My sequence', steps: [{ kind: 'breath', patternId: b.patterns[0].id, rounds: 6 }] })}><Icon name="plus" size={16} /> New</button></div>
+        {b.sequences.map(seq => {
+          const total = sequenceSeconds(seq, b.patterns) || 1
+          const first = seq.steps.find(st => st.kind === 'breath')
+          return (
+            <div key={seq.id} className="tile" style={{ gap: 12 }}>
+              <div className="row">
+                <span className="ico breath"><Icon name={first && first.kind === 'breath' ? PATTERN_ICON[first.patternId] ?? 'breath' : 'breath'} /></span>
+                <button className="grow" onClick={() => setPlaying(seq)}>
+                  <div className="t" style={{ fontSize: 15 }}>{seq.name}</div>
+                  <div className="d">{seq.steps.length} steps · {mmss(sequenceSeconds(seq, b.patterns))}</div>
+                </button>
+                <button className="chip icon" aria-label={`Edit ${seq.name}`} onClick={() => setEditSeq(seq)}><Icon name="edit" size={16} /></button>
+                <button className="chip icon" aria-label={`Play ${seq.name}`} style={{ background: 'var(--breath)', color: 'var(--bg)', borderColor: 'var(--breath)' }} onClick={() => setPlaying(seq)}><Icon name="play" size={16} /></button>
+              </div>
+              <div className="row" style={{ gap: 3 }}>
+                {seq.steps.map((st, k) => (
+                  <span key={k} title={st.kind === 'pause' ? 'Pause' : pat(st.patternId)?.name}
+                    style={{ height: 6, borderRadius: 3, flex: stepSeconds(st, b.patterns) / total, minWidth: 6, background: st.kind === 'pause' ? 'var(--line-2)' : 'var(--breath)', opacity: st.kind === 'pause' ? 1 : 0.55 + 0.45 * ((k % 2) ? 0.5 : 1) }} />
+                ))}
+              </div>
+              <div className="row wrap" style={{ gap: 6 }}>
+                {seq.steps.map((st, k) => <span key={k} className="tag">{st.kind === 'pause' ? `pause ${st.seconds}s` : `${pat(st.patternId)?.name ?? '?'} ×${st.rounds}`}{k < seq.steps.length - 1 ? '  →' : ''}</span>)}
+              </div>
             </div>
-          ))}
-        </div>
-        <button className="btn ghost" onClick={() => setEditSeq({ id: `s-${Date.now()}`, name: 'My sequence', steps: [{ kind: 'breath', patternId: b.patterns[0].id, rounds: 6 }] })}>+ New sequence</button>
+          )
+        })}
       </section>
 
       <section className="section">
-        <div className="eyebrow">Patterns · in · hold · out · hold</div>
-        <div className="card list">
+        <div className="section-head"><h2>Patterns</h2><span className="tag">in · hold · out · hold</span></div>
+        <div className="grid2">
           {b.patterns.map(p => (
-            <button key={p.id} className="item" onClick={() => setEditPat(p)}>
-              <span className="grow"><b style={{ fontWeight: 600 }}>{p.name}</b>{p.note && <div className="small muted">{p.note}</div>}</span>
-              <span className="num" style={{ fontSize: 16, color: 'var(--breath)' }}>{phaseText(p)}</span>
+            <button key={p.id} className="tile" onClick={() => setEditPat(p)}>
+              <span className="row between"><span className="ico sm breath"><Icon name={PATTERN_ICON[p.id] ?? 'wave'} size={18} /></span><span className="n" style={{ fontSize: 15, color: 'var(--breath)' }}>{cycleSeconds(p)}s</span></span>
+              <span><div className="t">{p.name}</div><PhaseBar p={p} /><div className="d num" style={{ fontWeight: 500 }}>{phaseText(p)}</div></span>
             </button>
           ))}
+          <button className="tile" style={{ borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', color: 'var(--muted)' }} onClick={() => setEditPat({ id: `p-${Date.now()}`, name: 'My pattern', inhale: 4, hold1: 2, exhale: 6, hold2: 0 })}>
+            <Icon name="plus" size={22} /><span className="t">New pattern</span>
+          </button>
         </div>
-        <button className="btn ghost" onClick={() => setEditPat({ id: `p-${Date.now()}`, name: 'My pattern', inhale: 4, hold1: 2, exhale: 6, hold2: 0 })}>+ New pattern</button>
       </section>
 
       <section className="section">
-        <div className="eyebrow">Cues</div>
-        <div className="card list">
-          <CheckRow on={b.prefs.sound} title="Sound" sub="Rising tone = inhale · falling = exhale · single note = hold" onToggle={() => setBreath(x => ({ ...x, prefs: { ...x.prefs, sound: !x.prefs.sound } }))} />
-          <CheckRow on={b.prefs.haptic} title="Vibration" sub="Short = inhale · long = exhale · double = hold. On iPhone this needs iOS 18 and is lighter than Android." onToggle={() => setBreath(x => ({ ...x, prefs: { ...x.prefs, haptic: !x.prefs.haptic } }))} />
-          <label className="item" style={{ display: 'block' }}>
-            <span className="row between"><span>Volume</span><b className="num">{Math.round(b.prefs.volume * 100)}</b></span>
-            <input id="breath-volume" type="range" min={0.1} max={1} step={0.05} value={b.prefs.volume} onChange={e => setBreath(x => ({ ...x, prefs: { ...x.prefs, volume: +e.target.value } }))} />
-          </label>
+        <div className="section-head"><h2>Cues</h2></div>
+        <div className="grid2">
+          <button className={`tile ${b.prefs.sound ? 'on' : ''}`} onClick={() => setBreath(x => ({ ...x, prefs: { ...x.prefs, sound: !x.prefs.sound } }))}>
+            <span className={`ico sm ${b.prefs.sound ? 'good' : 'muted'}`}><Icon name="sound" size={18} /></span>
+            <span><div className="t">Bowl sound</div><div className="d">{b.prefs.sound ? 'On' : 'Off'} · higher = inhale, lower = exhale</div></span>
+          </button>
+          <button className={`tile ${b.prefs.haptic && canVibrate ? 'on' : ''}`} disabled={!canVibrate} onClick={() => setBreath(x => ({ ...x, prefs: { ...x.prefs, haptic: !x.prefs.haptic } }))}>
+            <span className={`ico sm ${b.prefs.haptic && canVibrate ? 'good' : 'muted'}`}><Icon name="vibrate" size={18} /></span>
+            <span><div className="t">Vibration</div><div className="d">{canVibrate ? (b.prefs.haptic ? 'On' : 'Off') : 'iPhone doesn\'t allow web apps to vibrate. Use the sound.'}</div></span>
+          </button>
         </div>
-        <button className="btn ghost" onClick={() => { unlockCues(); cue('inhale', b.prefs); setTimeout(() => cue('exhale', b.prefs), 1300) }}>Test cues</button>
+        <div className="tile row">
+          <span className="ico sm muted"><Icon name="sound" size={18} /></span>
+          <input id="breath-volume" className="grow" type="range" min={0.1} max={1} step={0.05} value={b.prefs.volume} aria-label="Volume"
+            onChange={e => setBreath(x => ({ ...x, prefs: { ...x.prefs, volume: +e.target.value } }))} />
+          <button className="chip" onClick={() => { unlockCues(); cue('inhale', { ...b.prefs, sound: true }); setTimeout(() => cue('exhale', { ...b.prefs, sound: true }), 2200) }}>Test</button>
+        </div>
       </section>
 
       {editPat && <PatternSheet initial={editPat} onClose={() => setEditPat(null)} onPlay={seq => { setEditPat(null); setPlaying(seq) }} />}
     </>
   )
+}
+
+function PhaseBar({ p }: { p: BreathPattern }) {
+  const parts: [number, string, number][] = [[p.inhale, 'var(--breath)', 1], [p.hold1, 'var(--breath)', 0.35], [p.exhale, 'var(--breath)', 0.7], [p.hold2, 'var(--line-2)', 1]]
+  return <div className="row" style={{ gap: 2, margin: '8px 0 5px' }}>{parts.filter(([d]) => d > 0).map(([d, c, o], k) => <span key={k} style={{ flex: d, height: 5, borderRadius: 3, background: c, opacity: o }} />)}</div>
 }
 
 function PatternSheet({ initial, onClose, onPlay }: { initial: BreathPattern; onClose: () => void; onPlay: (s: BreathSequence) => void }) {

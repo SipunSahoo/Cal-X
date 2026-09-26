@@ -3,6 +3,7 @@ import { EQUIPMENT, EX, TIERS, TRACKS, videoUrl } from '../data/catalog'
 import { bests, status, targetOf, trainingNode, unit } from '../engine/progression'
 import { useStore } from '../store'
 import { Sheet } from '../ui'
+import { Icon, TRACK_ICON } from '../icons'
 
 const COLOR = { done: 'var(--good)', current: 'var(--accent)', gear: 'var(--locked)', locked: 'var(--locked)' }
 
@@ -17,27 +18,37 @@ export default function Skills() {
   return (
     <>
       <div className="row between" style={{ alignItems: 'flex-end' }}>
-        <div><div className="tag">Skill tree</div><h1 style={{ marginTop: 4 }}>{t.name}</h1></div>
-        <span><span className="num" style={{ fontSize: 28 }}>{all.filter(n => s.mastered.includes(n.id)).length}</span><span className="muted num" style={{ fontSize: 16 }}>/{all.length}</span></span>
+        <div><div className="eyebrow">Skill tree</div><h1 style={{ marginTop: 2 }}>Your path</h1></div>
+        <span className="chip"><Icon name="trophy" size={15} /> {all.filter(n => s.mastered.includes(n.id)).length}/{all.length}</span>
       </div>
-      <div className="row scroll-x" style={{ gap: 4, marginTop: 14 }}>
-        {TRACKS.map(x => <button key={x.id} className={`chip ${x.id === trackId ? 'on' : ''}`} onClick={() => setTrackId(x.id)}>
-          {x.name} <span style={{ opacity: .6 }}>{x.nodes.filter(n => s.mastered.includes(n.id)).length}/{x.nodes.length}</span></button>)}
+      <div className="grid3" style={{ marginTop: 16 }}>
+        {TRACKS.map(x => {
+          const d = x.nodes.filter(n => s.mastered.includes(n.id)).length, on = x.id === trackId
+          return (
+            <button key={x.id} className="tile mini" aria-pressed={on} onClick={() => setTrackId(x.id)}
+              style={on ? { borderColor: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 8%, var(--panel))' } : undefined}>
+              <span className="ico sm"><Icon name={TRACK_ICON[x.id]} size={18} /></span>
+              <span className="t" style={{ fontWeight: 600 }}>{x.name}</span>
+              <span className="bar" style={{ width: '100%' }}><i style={{ width: `${(d / x.nodes.length) * 100}%` }} /></span>
+              <span className="d">{d}/{x.nodes.length}</span>
+            </button>
+          )
+        })}
       </div>
 
-      <div className="card" style={{ marginTop: 14, paddingBottom: 4 }}>
+      <div className="section-head" style={{ marginTop: 22 }}><h2>{t.name}</h2><span className="tag">now: {training.name}</span></div>
+      <div className="card" style={{ marginTop: 10, paddingBottom: 4 }}>
         {t.nodes.map((n, k) => {
           const st = status(s, n), cur = training.id === n.id && st !== 'done', dim = st === 'locked' || st === 'gear'
           return (
             <button key={n.id} className="row" style={{ width: '100%', alignItems: 'stretch', gap: 14 }} onClick={() => setOpen(n.id)}>
-              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 22 }}>
-                <span style={{ width: 16, height: 16, marginTop: 2, flex: 'none', transform: cur ? 'rotate(45deg)' : undefined, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: 'var(--bg)',
-                  background: st === 'done' ? COLOR.done : cur ? COLOR.current : 'transparent', border: `1.5px solid ${cur ? COLOR.current : dim ? 'var(--line-2)' : COLOR[st]}` }}>
-                  {st === 'done' ? '✓' : ''}</span>
-                {k < t.nodes.length - 1 && <span style={{ flex: 1, width: 1.5, minHeight: 18, marginTop: 4, background: st === 'done' ? COLOR.done : 'var(--line-2)' }} />}
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32 }}>
+                <span className={`ico sm ${st === 'done' ? 'good' : cur ? '' : 'muted'}`} style={cur ? { boxShadow: '0 0 0 2px var(--accent)' } : undefined}>
+                  <Icon name={st === 'done' ? 'check' : dim ? 'lock' : TRACK_ICON[t.id]} size={16} /></span>
+                {k < t.nodes.length - 1 && <span style={{ flex: 1, width: 2, minHeight: 14, margin: '4px 0', borderRadius: 2, background: st === 'done' ? COLOR.done : 'var(--line)' }} />}
               </span>
-              <span className="grow" style={{ paddingBottom: 18, opacity: dim ? 0.55 : 1 }}>
-                <span className="row between"><b>{n.name}</b><span className="tag">{TIERS[n.tier]}</span></span>
+              <span className="grow" style={{ paddingBottom: 16, paddingTop: 5, opacity: dim ? 0.55 : 1 }}>
+                <span className="row between"><b style={{ fontWeight: 600 }}>{n.name}</b><span className="tag">{TIERS[n.tier]}</span></span>
                 <span className="small muted" style={{ display: 'block' }}>
                   {st === 'done' ? 'Mastered' : st === 'gear' ? `Needs: ${n.needs.filter(e => !s.equipment.includes(e)).map(e => EQUIPMENT[e]).join(', ')}`
                     : cur ? `Training now · target ${targetOf(s, n)}${unit(n)} → goal ${n.hi}${unit(n)}` : `Goal 3 × ${n.hi}${unit(n)}`}</span>

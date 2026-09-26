@@ -32,7 +32,7 @@ export const DEFAULT_BREATH: BreathState = {
     ] },
     { id: 'pretrain', name: 'Before training', steps: [{ kind: 'breath', patternId: 'box', rounds: 8 }] },
   ],
-  prefs: { sound: true, haptic: true, volume: 0.6 },
+  prefs: { sound: true, haptic: true, volume: 0.45 },
 }
 
 export type PhaseKind = 'inhale' | 'hold' | 'exhale' | 'rest'

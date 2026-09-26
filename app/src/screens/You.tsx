@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { EQUIPMENT, TIERS, TRACKS, type Equipment, type Tier } from '../data/catalog'
 import { parseDay, trainingNode, type Rules } from '../engine/progression'
+import { EQUIP_ICON, Icon } from '../icons'
 import { exportBackup, importBackup, resetAll, setState, useStore } from '../store'
-import { CheckRow, toast } from '../ui'
+import { toast } from '../ui'
 
 const RULES: { k: keyof Rules; label: string; min: number; max: number; step: number; fmt: (v: number) => string }[] = [
   { k: 'maxRpe', label: 'Max effort to progress', min: 7, max: 9, step: 1, fmt: v => `${v}/10` },
@@ -14,57 +15,93 @@ export default function You() {
   const s = useStore()
   const [confirmReset, setConfirmReset] = useState(false)
   const tiers = TRACKS.map(t => trainingNode(s, t).tier)
-  const level = (['E', 'A', 'I', 'B', 'F'] as Tier[]).find(t => tiers.filter(x => x === t).length >= 3) ?? tiers.sort()[0]
-  const toggleGear = (e: Equipment) => setState(x => ({ ...x, equipment: x.equipment.includes(e) ? x.equipment.filter(y => y !== e) : [...x.equipment, e] }))
-  const setTheme = (t: string) => { document.documentElement.dataset.theme = t; try { localStorage.setItem('calx-theme', t) } catch { /* optional */ } }
+  const level = (['E', 'A', 'I', 'B', 'F'] as Tier[]).find(t => tiers.filter(x => x === t).length >= 3) ?? [...tiers].sort()[0]
+  const toggleGear = (e: Equipment) => {
+    setState(x => ({ ...x, equipment: x.equipment.includes(e) ? x.equipment.filter(y => y !== e) : [...x.equipment, e] }))
+    if (e === 'bar' && !s.equipment.includes('bar')) toast('Pull-up bar added. Bar skills can now unlock.')
+  }
+  const setTheme = (t: string) => {
+    if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t
+    try { if (t === 'system') localStorage.removeItem('calx-theme'); else localStorage.setItem('calx-theme', t) } catch { /* optional */ }
+  }
 
   return (
     <>
-      <div className="eyebrow">You</div>
-      <h1 style={{ marginTop: 4 }}>{TIERS[level]}</h1>
-      <div className="small muted">Training since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · Mon / Wed / Fri strength</div>
-
-      <div className="section"><div className="eyebrow">Equipment</div>
-        <div className="card list">
-          {(Object.keys(EQUIPMENT) as Equipment[]).map(e => <CheckRow key={e} on={s.equipment.includes(e)} title={EQUIPMENT[e]}
-            sub={e === 'bar' ? 'Unlocks dead hang, pull-ups and muscle-ups' : undefined}
-            onToggle={() => { toggleGear(e); if (e === 'bar' && !s.equipment.includes('bar')) toast('Pull-up bar added. Bar skills can now unlock.') }} />)}
+      <div className="tile hero">
+        <div className="row">
+          <span className="ico" style={{ width: 52, height: 52, borderRadius: 16 }}><Icon name="you" size={26} /></span>
+          <span className="grow"><div className="eyebrow">Current level</div><h1 style={{ fontSize: 26 }}>{TIERS[level]}</h1></span>
         </div>
+        <div className="d">Training since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · strength Mon / Wed / Fri</div>
       </div>
 
-      <div className="section"><div className="eyebrow">Progression rules</div>
-        <div className="card stack">
+      <section className="section">
+        <div className="section-head"><h2>Equipment</h2><span className="tag">tap to toggle</span></div>
+        <div className="grid3">
+          {(Object.keys(EQUIPMENT) as Equipment[]).map(e => {
+            const on = s.equipment.includes(e)
+            return (
+              <button key={e} className={`tile mini ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggleGear(e)}>
+                {on && <span className="tick"><Icon name="check" size={12} /></span>}
+                <span className={`ico sm ${on ? 'good' : 'muted'}`}><Icon name={EQUIP_ICON[e]} size={18} /></span>
+                <span className="t">{EQUIPMENT[e]}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head"><h2>Progression rules</h2></div>
+        <div className="tile" style={{ gap: 16 }}>
           {RULES.map(r => (
-            <label key={r.k} className="stack" style={{ gap: 4 }}>
-              <span className="row between"><span>{r.label}</span><b>{r.fmt(s.rules[r.k])}</b></span>
+            <label key={r.k} className="stack" style={{ gap: 6 }}>
+              <span className="row between"><span className="t">{r.label}</span><b className="num">{r.fmt(s.rules[r.k])}</b></span>
               <input id={`rule-${r.k}`} type="range" min={r.min} max={r.max} step={r.step} value={s.rules[r.k]}
                 onChange={e => setState(x => ({ ...x, rules: { ...x.rules, [r.k]: +e.target.value } }))} />
             </label>
           ))}
-          <div className="small muted">Hit every set at or under the max effort and the target goes up. Hit the top of the range and you move to the next variation. Fall below the floor and the target goes down.</div>
+          <div className="d">Every set at or under the max effort → target goes up. Top of the range → next variation. Below the floor → target goes down.</div>
         </div>
-      </div>
+      </section>
 
-      <div className="section"><div className="eyebrow">Backup</div>
-        <div className="small muted">Your data lives only on this phone. Export a backup now and then, and save it to Files or iCloud Drive.</div>
-        <button className="btn ghost" onClick={exportBackup}>Export backup</button>
-        <label className="btn ghost">Import backup
-          <input type="file" accept="application/json,.json" hidden onChange={async e => {
-            const f = e.target.files?.[0]; if (!f) return
-            try { await importBackup(f); toast('Backup restored.') } catch (err) { toast((err as Error).message || 'Could not read that file.') }
-          }} /></label>
-      </div>
+      <section className="section">
+        <div className="section-head"><h2>Backup</h2><span className="tag">data lives on this phone</span></div>
+        <div className="grid2">
+          <button className="tile" onClick={exportBackup}>
+            <span className="ico sm"><Icon name="download" size={18} /></span><span><div className="t">Export</div><div className="d">Save to Files or iCloud Drive</div></span>
+          </button>
+          <label className="tile" style={{ cursor: 'pointer' }}>
+            <span className="ico sm"><Icon name="upload" size={18} /></span><span><div className="t">Import</div><div className="d">Restore from a backup file</div></span>
+            <input type="file" accept="application/json,.json" hidden onChange={async e => {
+              const f = e.target.files?.[0]; if (!f) return
+              try { await importBackup(f); toast('Backup restored.') } catch (err) { toast((err as Error).message || 'Could not read that file.') }
+            }} />
+          </label>
+        </div>
+      </section>
 
-      <div className="section"><div className="eyebrow">Appearance</div>
-        <div className="row"><button className="btn ghost" onClick={() => setTheme('dark')}>Dark</button><button className="btn ghost" onClick={() => setTheme('light')}>Light</button></div>
-      </div>
+      <section className="section">
+        <div className="section-head"><h2>Appearance</h2></div>
+        <div className="grid3">
+          {([['dark', 'Dark', 'moon'], ['light', 'Light', 'sun'], ['system', 'System', 'contrast']] as const).map(([t, l, ic]) => (
+            <button key={t} className="tile mini" onClick={() => setTheme(t)}><span className="ico sm muted"><Icon name={ic} size={18} /></span><span className="t">{l}</span></button>
+          ))}
+        </div>
+      </section>
 
-      <div className="section"><div className="eyebrow">Start over</div>
-        <button className="btn ghost" onClick={() => setState(x => ({ ...x, onboarded: false }))}>Redo assessment (keeps history)</button>
-        {confirmReset
-          ? <div className="row"><button className="btn ghost" onClick={() => setConfirmReset(false)}>Cancel</button><button className="btn" style={{ background: 'var(--bad)' }} onClick={resetAll}>Delete everything</button></div>
-          : <button className="btn ghost" style={{ color: 'var(--bad)' }} onClick={() => setConfirmReset(true)}>Delete all data</button>}
-      </div>
+      <section className="section">
+        <div className="section-head"><h2>Start over</h2></div>
+        <div className="grid2">
+          <button className="tile" onClick={() => setState(x => ({ ...x, onboarded: false }))}>
+            <span className="ico sm muted"><Icon name="restart" size={18} /></span><span><div className="t">Redo assessment</div><div className="d">Keeps your history</div></span>
+          </button>
+          <button className="tile" style={confirmReset ? { borderColor: 'var(--bad)' } : undefined} onClick={() => confirmReset ? resetAll() : setConfirmReset(true)}>
+            <span className="ico sm" style={{ background: 'color-mix(in srgb, var(--bad) 14%, transparent)', color: 'var(--bad)' }}><Icon name="trash" size={18} /></span>
+            <span><div className="t" style={{ color: 'var(--bad)' }}>{confirmReset ? 'Tap again to delete' : 'Delete all data'}</div><div className="d">{confirmReset ? 'This cannot be undone' : 'Export a backup first'}</div></span>
+          </button>
+        </div>
+      </section>
     </>
   )
 }

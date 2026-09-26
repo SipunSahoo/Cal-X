@@ -4,6 +4,7 @@ import { cue, unlockCues } from '../engine/cues'
 import { dayKey } from '../engine/progression'
 import { setState, useStore } from '../store'
 import { toast } from '../ui'
+import { Icon } from '../icons'
 
 const R = 88 // circle radius in the 200×200 viewBox
 const ease = (p: number) => 0.5 - Math.cos(Math.PI * p) / 2 // gentle start and finish, like a real breath
@@ -103,7 +104,7 @@ export default function BreathPlayer({ seq, onClose }: { seq: BreathSequence; on
   return (
     <div className="full"><div className="stack" style={{ minHeight: '100%', gap: 14 }}>
       <div className="row between">
-        <button className="chip" onClick={onClose}>✕ Close</button>
+        <button className="chip icon" aria-label="Close" onClick={onClose}><Icon name="close" size={16} /></button>
         <span className="tag">{sg.step < 0 ? seq.name : `Step ${sg.step + 1} of ${stepCount}`}</span>
         <span className="num small"><span ref={elapsedEl}>0:00</span><span className="muted"> / {mmss(total)}</span></span>
       </div>
@@ -115,9 +116,10 @@ export default function BreathPlayer({ seq, onClose }: { seq: BreathSequence; on
         <div className="small" style={{ minHeight: 20, color: 'var(--breath)' }}>{sg.side ? `${sg.side} nostril` : ''}</div>
       </div>
 
-      <svg viewBox="0 0 200 200" style={{ width: 'min(78vw, 320px)', alignSelf: 'center', display: 'block' }} role="img" aria-label={`${sg.label} circle`}>
+      <svg viewBox="-12 -12 224 224" style={{ overflow: 'visible', width: 'min(80vw, 330px)', alignSelf: 'center', display: 'block' }} role="img" aria-label={`${sg.label} circle`}>
         <defs><clipPath id="breath-clip"><circle cx="100" cy="100" r={R - 3} /></clipPath></defs>
         <circle cx="100" cy="100" r={R} fill="none" stroke="var(--line-2)" strokeWidth="1.5" />
+        {started && <circle key={idx} className="pulse" cx="100" cy="100" r={R} fill="none" stroke={color} strokeWidth="2" />}
         <rect ref={water} x="0" y={100 + R} width="200" height="200" fill={color} opacity="0.85" clipPath="url(#breath-clip)" />
         {[0.25, 0.5, 0.75].map(f => <line key={f} x1={100 - R * 1.08} x2={100 - R * 0.98} y1={100 + R - 2 * R * f} y2={100 + R - 2 * R * f} stroke="var(--muted)" strokeWidth="1" />)}
       </svg>
