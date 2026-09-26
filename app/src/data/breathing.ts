@@ -8,6 +8,7 @@ export interface BreathPattern {
   exhale: number
   hold2: number // hold after exhale (0 = none)
   alternate?: boolean // alternate-nostril cue (Nadi Shodhana)
+  rounds?: number // default rounds when practised on its own (10 if unset)
   note?: string
 }
 export type BreathStep = { kind: 'breath'; patternId: string; rounds: number } | { kind: 'pause'; seconds: number }

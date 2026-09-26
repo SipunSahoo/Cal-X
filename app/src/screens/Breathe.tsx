@@ -64,8 +64,8 @@ export default function Breathe() {
         <div className="grid2">
           {pats.map(p => (
             <button key={p.id} className="tile" onClick={() => setOpenPat(p)}>
-              <span className="row between"><span className="ico sm breath"><Icon name={patIcon(p.id)} size={18} /></span><span className="n" style={{ fontSize: 15, color: 'var(--breath)' }}>{cycleSeconds(p)}s</span></span>
-              <span><div className="t">{p.name}</div><PhaseBar p={p} /><div className="d num" style={{ fontWeight: 500 }}>{phaseText(p)}</div></span>
+              <span className="row between"><span className="ico sm breath"><Icon name={patIcon(p.id)} size={18} /></span><span style={{ textAlign: 'right' }}><span className="n" style={{ fontSize: 17, color: 'var(--breath)' }}>{p.rounds ?? 10}×</span><div className="d">{mmss(cycleSeconds(p) * (p.rounds ?? 10))}</div></span></span>
+              <span><div className="t">{p.name}</div><PhaseBar p={p} /><div className="d num" style={{ fontWeight: 500 }}>{phaseText(p)} · {cycleSeconds(p)}s a round</div></span>
             </button>
           ))}
           {view === 'mine' && (
@@ -145,7 +145,7 @@ const PHASES: [keyof BreathPattern, string, number][] = [['inhale', 'Inhale', 1]
 
 /** Suggested pattern: read-only, practise it or make an editable copy. */
 function PresetSheet({ p, onClose, onPlay, onCopy }: { p: BreathPattern; onClose: () => void; onPlay: (s: BreathSequence) => void; onCopy: () => void }) {
-  const [rounds, setRounds] = useState(10)
+  const [rounds, setRounds] = useState(p.rounds ?? 10)
   return (
     <Sheet onClose={onClose}>
       <div className="row"><span className="ico breath"><Icon name={patIcon(p.id)} /></span><span className="grow"><h2>{p.name}</h2>{p.note && <div className="d">{p.note}</div>}</span></div>
@@ -165,7 +165,8 @@ function PresetSheet({ p, onClose, onPlay, onCopy }: { p: BreathPattern; onClose
 function PatternEditor({ initial, onClose, onPlay }: { initial: BreathPattern; onClose: () => void; onPlay: (s: BreathSequence) => void }) {
   const s = useStore()
   const [p, setP] = useState(initial)
-  const [rounds, setRounds] = useState(10)
+  const rounds = p.rounds ?? 10
+  const setRounds = (n: number) => setP({ ...p, rounds: n })
   const [confirmDel, setConfirmDel] = useState(false)
   const exists = s.breath.patterns.some(x => x.id === p.id)
   const inUse = mySequences(s.breath).some(q => q.steps.some(st => st.kind === 'breath' && st.patternId === p.id))
