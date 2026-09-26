@@ -16,11 +16,13 @@ export default function Skills() {
 
   return (
     <>
-      <div className="eyebrow">Skill tree</div>
-      <h1 style={{ marginTop: 4 }}>{all.filter(n => s.mastered.includes(n.id)).length} of {all.length} mastered</h1>
-      <div className="row scroll-x" style={{ gap: 6, marginTop: 14 }}>
+      <div className="row between" style={{ alignItems: 'flex-end' }}>
+        <div><div className="tag">Skill tree</div><h1 style={{ marginTop: 4 }}>{t.name}</h1></div>
+        <span><span className="num" style={{ fontSize: 28 }}>{all.filter(n => s.mastered.includes(n.id)).length}</span><span className="muted num" style={{ fontSize: 16 }}>/{all.length}</span></span>
+      </div>
+      <div className="row scroll-x" style={{ gap: 4, marginTop: 14 }}>
         {TRACKS.map(x => <button key={x.id} className={`chip ${x.id === trackId ? 'on' : ''}`} onClick={() => setTrackId(x.id)}>
-          {x.name} {x.nodes.filter(n => s.mastered.includes(n.id)).length}/{x.nodes.length}</button>)}
+          {x.name} <span style={{ opacity: .6 }}>{x.nodes.filter(n => s.mastered.includes(n.id)).length}/{x.nodes.length}</span></button>)}
       </div>
 
       <div className="card" style={{ marginTop: 14, paddingBottom: 4 }}>
@@ -28,14 +30,14 @@ export default function Skills() {
           const st = status(s, n), cur = training.id === n.id && st !== 'done', dim = st === 'locked' || st === 'gear'
           return (
             <button key={n.id} className="row" style={{ width: '100%', alignItems: 'stretch', gap: 14 }} onClick={() => setOpen(n.id)}>
-              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
-                <span style={{ width: 28, height: 28, flex: 'none', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, color: 'var(--bg)',
-                  background: st === 'done' ? COLOR.done : cur ? COLOR.current : 'transparent', border: `2px solid ${cur ? COLOR.current : COLOR[st]}` }}>
-                  {st === 'done' ? '✓' : dim ? <span style={{ color: 'var(--muted)', fontSize: 11 }}>🔒</span> : ''}</span>
-                {k < t.nodes.length - 1 && <span style={{ flex: 1, width: 2, minHeight: 18, background: st === 'done' ? COLOR.done : 'var(--line)' }} />}
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 22 }}>
+                <span style={{ width: 16, height: 16, marginTop: 2, flex: 'none', transform: cur ? 'rotate(45deg)' : undefined, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: 'var(--bg)',
+                  background: st === 'done' ? COLOR.done : cur ? COLOR.current : 'transparent', border: `1.5px solid ${cur ? COLOR.current : dim ? 'var(--line-2)' : COLOR[st]}` }}>
+                  {st === 'done' ? '✓' : ''}</span>
+                {k < t.nodes.length - 1 && <span style={{ flex: 1, width: 1.5, minHeight: 18, marginTop: 4, background: st === 'done' ? COLOR.done : 'var(--line-2)' }} />}
               </span>
-              <span className="grow" style={{ paddingBottom: 16, opacity: dim ? 0.6 : 1 }}>
-                <span className="row between"><b>{n.name}</b><span className="small muted">{TIERS[n.tier]}</span></span>
+              <span className="grow" style={{ paddingBottom: 18, opacity: dim ? 0.55 : 1 }}>
+                <span className="row between"><b>{n.name}</b><span className="tag">{TIERS[n.tier]}</span></span>
                 <span className="small muted" style={{ display: 'block' }}>
                   {st === 'done' ? 'Mastered' : st === 'gear' ? `Needs: ${n.needs.filter(e => !s.equipment.includes(e)).map(e => EQUIPMENT[e]).join(', ')}`
                     : cur ? `Training now · target ${targetOf(s, n)}${unit(n)} → goal ${n.hi}${unit(n)}` : `Goal 3 × ${n.hi}${unit(n)}`}</span>

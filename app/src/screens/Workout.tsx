@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TIERS, videoUrl } from '../data/catalog'
 import { bests, buildSession, dayKey, evaluate, lastSets, unit, type Decision, type Planned, type SetLog } from '../engine/progression'
 import { setState, useStore } from '../store'
@@ -77,9 +77,9 @@ export default function Workout({ onClose }: { onClose: () => void }) {
     const n = items[i]
     return (
       <div className="full"><div className="stack" style={{ minHeight: '100%', justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 18 }}>
-        <div className="eyebrow">Rest</div>
-        <div className="num" style={{ fontSize: 110, lineHeight: 1 }}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</div>
-        <div className="muted">Next: {n.ex.name}, set {logs[i].length + 1} Â· {n.target}{unit(n.ex) || ' reps'}</div>
+        <div className="tag">Rest</div>
+        <div className="num" style={{ fontSize: 120, lineHeight: 1, fontWeight: 800 }}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</div>
+        <div className="muted">Next: {n.ex.name}, set {logs[i].length + 1} · {n.target}{unit(n.ex) || ' reps'}</div>
         <div className="row" style={{ width: '100%', maxWidth: 320 }}>
           <button className="btn ghost" onClick={() => setRestEnd(restEnd + 15000)}>+15 s</button>
           <button className="btn" onClick={() => setRestEnd(null)}>Skip rest</button>
@@ -94,49 +94,46 @@ export default function Workout({ onClose }: { onClose: () => void }) {
       <div className="row between">
         {confirmQuit
           ? <span className="row"><button className="chip" style={{ color: 'var(--bad)' }} onClick={onClose}>Discard workout</button><button className="chip" onClick={() => setConfirmQuit(false)}>Keep going</button></span>
-          : <button className="chip" onClick={() => setConfirmQuit(true)}>âœ• Quit</button>}
+          : <button className="chip" onClick={() => setConfirmQuit(true)}>✕ Quit</button>}
         <span className="small muted">{i + 1} / {items.length}</span>
         <button className="chip" onClick={() => finish()}>Finish</button>
       </div>
-      <div className="row" style={{ gap: 4 }}>
+      <div className="row" style={{ gap: 3 }}>
         {items.map((_, k) => <button key={k} aria-label={`Go to exercise ${k + 1}`} onClick={() => goTo(k)} style={{ flex: 1, height: 14, display: 'flex', alignItems: 'center' }}>
-          <i style={{ flex: 1, height: 4, borderRadius: 4, background: logs[k].length >= items[k].sets ? 'var(--accent)' : k === i ? 'var(--text)' : 'var(--line)' }} /></button>)}
+          <i style={{ flex: 1, height: 3, background: logs[k].length >= items[k].sets ? 'var(--accent)' : k === i ? 'var(--text)' : 'var(--line-2)' }} /></button>)}
       </div>
 
       <div>
-        <div className="eyebrow">{ex.track ? `${TIERS[ex.tier]} Â· ${ex.track}` : 'Accessory'}{ex.perSide ? ' Â· per side' : ''}</div>
-        <h1 style={{ fontSize: 42, marginTop: 6 }}>{ex.name}</h1>
-      </div>
-      <div className="row">
-        {Array.from({ length: p.sets }, (_, k) => <span key={k} style={{ width: 12, height: 12, borderRadius: '50%', background: k < done ? 'var(--accent)' : 'transparent', border: `2px solid ${k === done ? 'var(--text)' : 'var(--line)'}` }} />)}
-        <span className="small muted">Set {Math.min(done + 1, p.sets)} of {p.sets}</span>
+        <div className="tag">{String(i + 1).padStart(2, '0')} · {ex.track ? `${TIERS[ex.tier]} · ${ex.track}` : 'Accessory'}{ex.perSide ? ' · per side' : ''}</div>
+        <h1 style={{ fontSize: 36, marginTop: 6 }}>{ex.name}</h1>
       </div>
 
-      <div className="row">
-        <div className="card grow"><div className="eyebrow">Target</div><div className="num" style={{ fontSize: 30 }}>{p.target}{U || ' reps'}</div></div>
-        <div className="card grow"><div className="eyebrow">Last time</div><div className="num" style={{ fontSize: 30 }}>{last?.[done] != null ? `${last[done]}${U || ' reps'}` : 'â€“'}</div></div>
+      <div className="stats">
+        <div className="stat"><div className="num">{Math.min(done + 1, p.sets)}<span className="muted">/{p.sets}</span></div><div className="tag">Set</div></div>
+        <div className="stat"><div className="num">{p.target}{U}</div><div className="tag">Target</div></div>
+        <div className="stat"><div className="num muted">{last?.[done] != null ? `${last[done]}${U}` : '–'}</div><div className="tag">Last time</div></div>
       </div>
 
       {ex.hold && (
-        <button className="card" style={{ textAlign: 'center', padding: 18, borderColor: holding ? 'var(--accent)' : undefined }}
+        <button className="panel" style={{ textAlign: 'center', padding: 18, borderColor: holding ? 'var(--accent)' : undefined }}
           onClick={() => { if (holding) { setVal(Math.floor((Date.now() - holdStart) / 1000)); setHoldStart(null) } else setHoldStart(Date.now()) }}>
-          <div className="num" style={{ fontSize: 56 }}>{holding ? Math.floor((Date.now() - holdStart) / 1000) : val}s</div>
-          <div className="small muted">{holding ? 'Tap to stop' : 'Tap to start the hold timer'}</div>
+          <div className="num" style={{ fontSize: 64, color: holding ? 'var(--accent)' : undefined }}>{holding ? Math.floor((Date.now() - holdStart) / 1000) : val}s</div>
+          <div className="tag">{holding ? 'Tap to stop' : 'Tap to start the hold timer'}</div>
         </button>
       )}
       {!holding && (
-        <div className="card row between" style={{ padding: 10 }}>
-          <button className="btn ghost" style={{ width: 64 }} aria-label="Less" onClick={() => setVal(v => Math.max(0, v - (ex.hold ? 5 : 1)))}>âˆ’</button>
-          <div style={{ textAlign: 'center' }}><div className="num" style={{ fontSize: 48, lineHeight: 1 }}>{val}</div><div className="small muted">{ex.hold ? 'seconds' : 'reps'} done</div></div>
-          <button className="btn ghost" style={{ width: 64 }} aria-label="More" onClick={() => setVal(v => v + (ex.hold ? 5 : 1))}>+</button>
+        <div className="row between" style={{ borderTop: '1px solid var(--line-2)', borderBottom: '1px solid var(--line)', padding: '10px 0' }}>
+          <button className="btn ghost" style={{ width: 72 }} aria-label="Less" onClick={() => setVal(v => Math.max(0, v - (ex.hold ? 5 : 1)))}>−</button>
+          <div style={{ textAlign: 'center' }}><div className="num" style={{ fontSize: 60, lineHeight: 1 }}>{val}</div><div className="tag">{ex.hold ? 'seconds' : 'reps'} done</div></div>
+          <button className="btn ghost" style={{ width: 72 }} aria-label="More" onClick={() => setVal(v => v + (ex.hold ? 5 : 1))}>+</button>
         </div>
       )}
 
       <div>
-        <div className="eyebrow" style={{ marginBottom: 8 }}>How hard was it? (effort out of 10)</div>
-        <div className="row" style={{ gap: 6 }}>
-          {RPE.map(([v, l]) => <button key={v} className={`chip ${rpe === v ? 'on' : ''}`} style={{ flex: 1, flexDirection: 'column', gap: 0, padding: '6px 0' }} onClick={() => setRpe(v)}>
-            <b>{v}</b><span style={{ fontSize: 10, fontWeight: 500 }}>{l}</span></button>)}
+        <div className="tag" style={{ marginBottom: 8 }}>Effort · out of 10</div>
+        <div className="row" style={{ gap: 4 }}>
+          {RPE.map(([v, l]) => <button key={v} className={`chip ${rpe === v ? 'on' : ''}`} style={{ flex: 1, flexDirection: 'column', gap: 0, padding: '7px 0' }} onClick={() => setRpe(v)}>
+            <b className="num" style={{ fontSize: 16 }}>{v}</b><span style={{ fontSize: 10, fontWeight: 500 }}>{l}</span></button>)}
         </div>
       </div>
 
@@ -148,9 +145,9 @@ export default function Workout({ onClose }: { onClose: () => void }) {
           const pn = { ...pain, [i]: true }; setPain(pn)
           toast("Noted. Stop this exercise. Cal-X can't diagnose pain. If it's sharp or lasts, see a professional."); next(logs, pn)
         }}>Something hurts</button>
-        <a className="chip" href={videoUrl(ex.name)} target="_blank" rel="noreferrer">Demo video â†—</a>
+        <a className="chip" href={videoUrl(ex.name)} target="_blank" rel="noreferrer">Demo video ↗</a>
       </div>
-      {items[i + 1] && <div className="small muted">Up next: {items[i + 1].ex.name} Â· {items[i + 1].sets} Ã— {items[i + 1].target}{unit(items[i + 1].ex)}</div>}
+      {items[i + 1] && <div className="small muted">Up next: {items[i + 1].ex.name} · {items[i + 1].sets} × {items[i + 1].target}{unit(items[i + 1].ex)}</div>}
     </div></div>
   )
 }
@@ -180,16 +177,16 @@ function Summary({ minutes, results, onDone }: { minutes: number; results: { p: 
   }
   return (
     <div className="full"><div className="stack" style={{ gap: 14 }}>
-      <div className="eyebrow">Session complete</div><h1>Nice work.</h1>
-      <div className="row">
-        {[[minutes, 'minutes'], [results.reduce((a, r) => a + r.sets.length, 0), 'sets'], [prs.length, 'new records']].map(([v, l]) =>
-          <div key={l} className="card stat"><div className="num">{v}</div><div className="small muted">{l}</div></div>)}
+      <div className="tag">Session complete · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Logged.</h1>
+      <div className="stats">
+        {[[minutes, 'minutes'], [results.reduce((a, r) => a + r.sets.length, 0), 'sets'], [prs.length, 'records']].map(([v, l]) =>
+          <div key={l} className="stat"><div className="num">{v}</div><div className="tag">{l}</div></div>)}
       </div>
-      <div className="eyebrow" style={{ marginTop: 6 }}>Coach decisions for next session</div>
-      {results.map(r => (
+      <div className="eyebrow" style={{ marginTop: 10 }}>Next session</div>
+      {results.map((r, k) => (
         <div key={r.p.ex.id} className="card stack" style={{ gap: 6 }}>
-          <div className="row between"><b>{r.p.ex.name}</b><span className="chip" style={{ color: TAG_COLOR[r.d.tag] }}>{r.d.tag}</span></div>
-          <div className="small muted">Logged {r.sets.length ? r.sets.map(x => x.value).join(' Â· ') + unit(r.p.ex) : 'nothing'} Â· target {r.p.sets} Ã— {r.p.target}{unit(r.p.ex)}</div>
+          <div className="row between"><span className="row"><span className="idx">{String(k + 1).padStart(2, '0')}</span><b>{r.p.ex.name}</b></span><span className="tag" style={{ color: TAG_COLOR[r.d.tag] }}>{r.d.tag}</span></div>
+          <div className="small muted">Logged {r.sets.length ? r.sets.map(x => x.value).join(' · ') + unit(r.p.ex) : 'nothing'} · target {r.p.sets} × {r.p.target}{unit(r.p.ex)}</div>
           <div className="small">{r.d.why}</div>
         </div>
       ))}

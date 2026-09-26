@@ -1,4 +1,5 @@
 import { ACCESSORIES, EX, TRACKS, type Equipment, type Exercise, type Track } from '../data/catalog'
+import type { BreathState } from '../data/breathing'
 
 // ---------- stored state ----------
 export interface SetLog { value: number; rpe: number }
@@ -18,6 +19,7 @@ export interface State {
   checks: Record<string, string[]> // date -> check-off keys
   readiness: Record<string, Readiness>
   rules: Rules
+  breath: BreathState
 }
 
 export const DEFAULT_RULES: Rules = { maxRpe: 8, failPct: 75, lightBelow: 50 }

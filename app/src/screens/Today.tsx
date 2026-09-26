@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { CHECKS, EX, TIERS, TRACKS, WEEK } from '../data/catalog'
-import { addDays, buildSession, dayKey, lastSets, readinessScore, targetOf, trainingNode, unit } from '../engine/progression'
+import { addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit } from '../engine/progression'
 import { setState, useStore } from '../store'
 import { CheckRow, Choice, Sheet } from '../ui'
 import { NodeSheet } from './Skills'
 
-export default function Today({ onStart }: { onStart: () => void }) {
+const pad = (n: number) => String(n).padStart(2, '0')
+
+export default function Today({ onStart, onBreathe }: { onStart: () => void; onBreathe: () => void }) {
   const s = useStore()
   const now = new Date(), todayKey = dayKey(now)
   const monday = addDays(now, -((now.getDay() + 6) % 7))
   const [sel, setSel] = useState(todayKey)
   const [sheet, setSheet] = useState<null | 'checkin' | string>(null)
-  const selDate = new Date(sel + 'T12:00'), plan = WEEK[selDate.getDay()], isToday = sel === todayKey
+  const selDate = parseDay(sel), plan = WEEK[selDate.getDay()], isToday = sel === todayKey
+  const week = Math.max(1, Math.floor((now.getTime() - parseDay(s.startDate).getTime()) / 6048e5) + 1)
   const r = s.readiness[todayKey]
   const ses = buildSession(s, isToday ? r : undefined)
   const doneSession = s.sessions.find(x => x.date === sel)
@@ -21,35 +24,49 @@ export default function Today({ onStart }: { onStart: () => void }) {
   const push = trainingNode(s, TRACKS[0]), pushNext = TRACKS[0].nodes[push.index + 1]
 
   const checkList = (group: 'session' | 'rhythm') => CHECKS.filter(c => c.group === group && (!c.on || c.on.includes(plan.kind))).map(c => (
-    <CheckRow key={c.key} on={checks.includes(c.key)} onToggle={() => toggle(c.key)}
-      title={c.key === 'ysec' ? `Yoga sector: ${plan.yoga}` : c.key === 'yoga' ? `Hatha yoga: ${plan.yoga}` : c.title}
-      sub={c.key === 'evening' ? plan.evening : c.sub} />
+    <div key={c.key} className="row">
+      <div className="grow"><CheckRow on={checks.includes(c.key)} onToggle={() => toggle(c.key)}
+        title={c.key === 'ysec' ? `Yoga sector: ${plan.yoga}` : c.key === 'yoga' ? `Hatha yoga: ${plan.yoga}` : c.title}
+        sub={c.key === 'evening' ? plan.evening : c.sub} /></div>
+      {(c.key === 'morning' || c.key === 'night') && <button className="chip" style={{ color: 'var(--breath)', borderColor: 'var(--breath)' }} onClick={onBreathe}>Breathe</button>}
+    </div>
   ))
+
+  const rows = doneSession
+    ? doneSession.items.map(it => ({ id: it.id, right: it.sets.length ? it.sets.map(x => x.value).join(' · ') : 'skipped' }))
+    : ses.map(p => ({ id: p.ex.id, right: `${p.sets}×${p.target}${unit(p.ex)}` }))
 
   return (
     <>
-      <div className="eyebrow">{isToday ? 'Today' : 'Plan'}</div>
-      <h1 style={{ marginTop: 4 }}>{selDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</h1>
+      <header className="row between" style={{ alignItems: 'flex-end' }}>
+        <div className="row" style={{ alignItems: 'flex-end', gap: 12 }}>
+          <span className="num" style={{ fontSize: 64, lineHeight: .82, fontWeight: 800 }}>{pad(selDate.getDate())}</span>
+          <span><div className="wide" style={{ fontWeight: 700, fontSize: 16 }}>{selDate.toLocaleDateString('en-GB', { weekday: 'long' })}</div>
+            <div className="tag">{selDate.toLocaleDateString('en-GB', { month: 'long' })}{isToday ? ' · today' : ''}</div></span>
+        </div>
+        <span className="tag">Week {pad(week)}</span>
+      </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: 16 }}>
+      <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginTop: 18, borderTop: '1px solid var(--line-2)', borderBottom: '1px solid var(--line)' }}>
         {Array.from({ length: 7 }, (_, i) => {
           const d = addDays(monday, i), k = dayKey(d), p = WEEK[d.getDay()]
           const done = s.sessions.some(x => x.date === k) || (p.kind === 'yoga' && s.checks[k]?.includes('yoga'))
           return (
-            <button key={k} onClick={() => setSel(k)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 0', borderRadius: 12, border: `1px solid ${k === sel ? 'var(--line)' : 'transparent'}`, background: k === sel ? 'var(--card-2)' : undefined }}>
-              <span className="small muted">{d.toLocaleDateString('en-GB', { weekday: 'narrow' })}</span>
-              <span className="num" style={{ fontSize: 20, color: k === todayKey ? 'var(--accent)' : undefined }}>{d.getDate()}</span>
-              <span className="dot" style={{ background: done ? 'var(--good)' : p.kind === 'strength' ? 'var(--accent)' : p.kind === 'yoga' ? 'var(--steel)' : 'var(--locked)' }} />
+            <button key={k} onClick={() => setSel(k)} aria-pressed={k === sel}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 0 8px', boxShadow: k === sel ? 'inset 0 -2px var(--accent)' : undefined }}>
+              <span className="tag">{d.toLocaleDateString('en-GB', { weekday: 'narrow' })}</span>
+              <span className="num" style={{ fontSize: 17, color: k === todayKey ? 'var(--accent)' : k === sel ? 'var(--text)' : 'var(--muted)' }}>{d.getDate()}</span>
+              <span className="dot" style={{ background: done ? 'var(--good)' : p.kind === 'strength' ? 'var(--accent)' : p.kind === 'yoga' ? 'var(--breath)' : 'transparent', border: p.kind === 'rest' ? '1px solid var(--line-2)' : 0 }} />
             </button>
           )
         })}
-      </div>
+      </nav>
 
       {isToday && plan.kind === 'strength' && !doneSession && (
-        <button className="card row" style={{ marginTop: 16, width: '100%' }} onClick={() => setSheet('checkin')}>
+        <button className="item" style={{ borderBottom: '1px solid var(--line)' }} onClick={() => setSheet('checkin')}>
           {r ? <>
-            <span className="num" style={{ fontSize: 34, color: r.score >= 70 ? 'var(--good)' : r.score >= s.rules.lightBelow ? 'var(--warn)' : 'var(--bad)' }}>{r.score}</span>
-            <span className="grow"><b>Readiness</b><div className="small muted">{r.pain ? 'Pain reported. Skip anything that hurts. See a professional if it persists.' : r.score >= 70 ? 'Good to train as planned.' : r.score >= s.rules.lightBelow ? 'Train as planned, stop 1–2 reps short.' : 'Lighter session applied: 1 set fewer each.'}</div></span>
+            <span className="num" style={{ fontSize: 30, width: 52, color: r.score >= 70 ? 'var(--good)' : r.score >= s.rules.lightBelow ? 'var(--warn)' : 'var(--bad)' }}>{r.score}</span>
+            <span className="grow"><span className="tag">Readiness</span><div className="small">{r.pain ? 'Pain reported. Skip anything that hurts. See a professional if it persists.' : r.score >= 70 ? 'Good to train as planned.' : r.score >= s.rules.lightBelow ? 'Train as planned, stop 1–2 reps short.' : 'Lighter session applied: 1 set fewer each.'}</div></span>
           </> : <>
             <span className="grow"><b>How do you feel today?</b><div className="small muted">10-second check-in. Adjusts today's session.</div></span>
             <span className="chip">Check in</span>
@@ -57,53 +74,50 @@ export default function Today({ onStart }: { onStart: () => void }) {
         </button>
       )}
 
-      <div className="section">
-        {plan.kind === 'strength' ? (
-          <div className="card stack">
-            <div className="row between">
-              <div><div className="eyebrow">Strength circuit · {ses.length} exercises</div><h2 style={{ marginTop: 4 }}>Full body</h2></div>
-              <div style={{ textAlign: 'right' }}><div className="num" style={{ fontSize: 26 }}>{mins}<span className="small muted"> min</span></div><div className="small muted">+ warm-up & cool-down</div></div>
-            </div>
-            <div className="list">
-              {(doneSession ? doneSession.items.map(it => ({ id: it.id, label: it.sets.length ? it.sets.map(x => x.value).join(' · ') : 'skipped' })) : ses.map(p => ({ id: p.ex.id, label: `${p.sets} × ${p.target}${unit(p.ex)}` }))).map(({ id, label }) => {
-                const p = EX[id]
-                const last = lastSets(s, id)
-                return (
-                  <button key={id} className="item" onClick={() => setSheet(id)}>
-                    <span className="grow"><b style={{ fontWeight: 600 }}>{p?.name ?? id}</b>
-                      <div className="small muted">{p?.track ? `${TIERS[p.tier]} · ${p.track}` : 'Accessory'}{!doneSession && last ? ` · last ${last.join('·')}${p ? unit(p) : ''}` : ''}</div></span>
-                    <span className="num" style={{ fontSize: 20 }}>{label}</span>
-                  </button>
-                )
-              })}
-            </div>
-            {doneSession ? <div className="chip on">✓ Completed · {doneSession.minutes} min</div>
-              : isToday ? <button className="btn" onClick={onStart}>Start workout</button>
-              : <div className="small muted" style={{ textAlign: 'center' }}>Preview. Targets update after each session.</div>}
+      {plan.kind === 'strength' ? (
+        <section className="section">
+          <div className="row between" style={{ alignItems: 'flex-end' }}>
+            <div><div className="tag">Strength circuit · {rows.length} exercises</div><h1 style={{ marginTop: 4 }}>Full body</h1></div>
+            <div style={{ textAlign: 'right' }}><span className="num" style={{ fontSize: 28 }}>{doneSession ? doneSession.minutes : mins}</span><span className="tag"> min</span></div>
           </div>
-        ) : (
-          <div className="card stack">
-            <div className="eyebrow">{plan.kind === 'yoga' ? 'Hatha yoga · 35 min' : 'Rest day'}</div>
-            <h2>{plan.kind === 'yoga' ? plan.yoga : 'Recover'}</h2>
-            <div className="small muted">{plan.kind === 'yoga' ? 'Tick it off below. Full yoga tracking comes later.' : `${plan.yoga}. Strength is built on rest days too.`}</div>
-            {isToday && !doneSession && <button className="btn ghost" onClick={onStart}>Train calisthenics anyway</button>}
+          <div className="card list">
+            {rows.map(({ id, right }, k) => {
+              const ex = EX[id], last = lastSets(s, id)
+              return (
+                <button key={id} className="item" onClick={() => setSheet(id)}>
+                  <span className="idx">{pad(k + 1)}</span>
+                  <span className="grow"><b style={{ fontWeight: 600 }}>{ex?.name ?? id}</b>
+                    <div className="small muted">{ex?.track ? `${TIERS[ex.tier]} · ${ex.track}` : 'Accessory'}{!doneSession && last ? ` · last ${last.join('·')}${ex ? unit(ex) : ''}` : ''}</div></span>
+                  <span className="num" style={{ fontSize: 17 }}>{right}</span>
+                </button>
+              )
+            })}
           </div>
-        )}
-      </div>
-
-      {plan.kind !== 'rest' && <div className="section"><div className="eyebrow">{plan.kind === 'strength' ? 'Warm-up & cool-down' : 'Session'}</div><div className="card list">{checkList('session')}</div></div>}
-
-      {plan.kind === 'strength' && pushNext && (
-        <div className="section"><div className="eyebrow">Next unlock</div>
-          <button className="card" style={{ width: '100%' }} onClick={() => setSheet(push.id)}>
-            <div className="row between"><b>{push.name}</b><span className="small muted">goal 3 × {push.hi}{unit(push)}</span></div>
-            <div className="bar" style={{ marginTop: 10 }}><i style={{ width: `${Math.min(100, Math.round(targetOf(s, push) / push.hi * 100))}%` }} /></div>
-            <div className="small muted" style={{ marginTop: 8 }}>Master it to unlock <b style={{ color: 'var(--text)' }}>{pushNext.name}</b>.</div>
-          </button>
-        </div>
+          {doneSession ? <div className="btn ghost" style={{ color: 'var(--good)', borderColor: 'var(--good)' }}>✓ Completed</div>
+            : isToday ? <button className="btn" onClick={onStart}>Start workout</button>
+            : <div className="small muted">Preview. Targets update after each session.</div>}
+        </section>
+      ) : (
+        <section className="section">
+          <div className="tag">{plan.kind === 'yoga' ? 'Hatha yoga · 35 min' : 'Rest day'}</div>
+          <h1>{plan.kind === 'yoga' ? plan.yoga : 'Recover'}</h1>
+          <div className="small muted">{plan.kind === 'yoga' ? 'Tick it off below. Full yoga tracking comes later.' : `${plan.yoga}. Strength is built on rest days too.`}</div>
+          {isToday && !doneSession && <button className="btn ghost" onClick={onStart}>Train calisthenics anyway</button>}
+        </section>
       )}
 
-      <div className="section"><div className="eyebrow">Daily rhythm</div><div className="card list">{checkList('rhythm')}</div></div>
+      {plan.kind !== 'rest' && <section className="section"><div className="eyebrow">{plan.kind === 'strength' ? 'Warm-up & cool-down' : 'Session'}</div><div className="card list">{checkList('session')}</div></section>}
+
+      {plan.kind === 'strength' && pushNext && (
+        <section className="section"><div className="eyebrow">Next unlock</div>
+          <button className="card" onClick={() => setSheet(push.id)}>
+            <div className="row between"><b>{push.name} → {pushNext.name}</b><span className="num small">{targetOf(s, push)}/{push.hi}{unit(push)}</span></div>
+            <div className="bar" style={{ marginTop: 10 }}><i style={{ width: `${Math.min(100, Math.round(targetOf(s, push) / push.hi * 100))}%` }} /></div>
+          </button>
+        </section>
+      )}
+
+      <section className="section"><div className="eyebrow">Daily rhythm</div><div className="card list">{checkList('rhythm')}</div></section>
 
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}

@@ -23,8 +23,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg}'],
-        runtimeCaching: [{ urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//, handler: 'CacheFirst', options: { cacheName: 'fonts' } }],
+        // app shell + Latin fonts precached so the app works fully offline
+        globPatterns: ['**/*.{js,css,html,png,svg}', '**/*latin-wdth*.woff2'],
       },
     }),
   ],

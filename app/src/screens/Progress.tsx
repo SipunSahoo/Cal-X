@@ -16,7 +16,7 @@ export default function Progress() {
 
   if (!s.sessions.length) return (
     <>
-      <div className="eyebrow">Progress</div><h1 style={{ marginTop: 4 }}>Your story starts here</h1>
+      <div className="tag">Progress</div><h1 style={{ marginTop: 4 }}>Your story starts here</h1>
       <div className="card" style={{ marginTop: 16 }}><p className="muted" style={{ margin: 0 }}>Finish your first workout and this page fills with records, charts and your consistency calendar.</p></div>
     </>
   )
@@ -31,7 +31,7 @@ export default function Progress() {
     const kind = trained ? 'str' : yoga ? 'yoga' : key > todayKey || before ? 'none' : plan.kind === 'rest' ? 'rest' : past ? 'miss' : 'none'
     return { key, kind }
   })
-  const CELL = { str: 'var(--accent)', yoga: 'var(--steel)', rest: 'var(--card-2)', miss: 'transparent', none: 'transparent' }
+  const CELL = { str: 'var(--accent)', yoga: 'var(--breath)', rest: 'var(--panel-2)', miss: 'transparent', none: 'transparent' }
 
   // chart: best set per session for the chosen track
   const track = TRACKS.find(t => t.id === trackId)!
@@ -44,7 +44,7 @@ export default function Progress() {
   const ticks = [0, 1, 2, 3].map(k => Math.round((max / 1.15) * k / 3))
   const segs: { id: string; from: number; to: number }[] = []
   pts.forEach((p, k) => { const last = segs[segs.length - 1]; if (last?.id === p.id) last.to = k; else segs.push({ id: p.id, from: k, to: k }) })
-  const segColor = (k: number) => (k === segs.length - 1 ? 'var(--accent)' : k % 2 ? 'var(--muted)' : 'var(--steel)')
+  const segColor = (k: number) => (k === segs.length - 1 ? 'var(--accent)' : k % 2 ? 'var(--muted)' : 'var(--breath)')
 
   const milestones: [string, number][] = [
     ['First workout logged', Math.min(1, s.sessions.length)],
@@ -62,7 +62,7 @@ export default function Progress() {
     <>
       <div className="eyebrow">Progress</div>
       <h1 style={{ marginTop: 4 }}>Since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</h1>
-      <div className="row" style={{ marginTop: 14 }}>
+      <div className="stats" style={{ marginTop: 14 }}>
         <Stat value={s.sessions.length} label="workouts" />
         <Stat value={weekStreak(s)} label="week streak" />
         <Stat value={`${thisWeek}/3`} label="this week" />
@@ -70,11 +70,11 @@ export default function Progress() {
 
       <div className="section">
         <div className="row between"><div className="eyebrow">Consistency</div>
-          <div className="row small muted" style={{ gap: 8 }}><span style={{ color: 'var(--accent)' }}>■</span>Strength<span style={{ color: 'var(--steel)' }}>■</span>Yoga<span style={{ color: 'var(--bad)' }}>▢</span>Missed</div></div>
+          <div className="row small muted" style={{ gap: 8 }}><span style={{ color: 'var(--accent)' }}>■</span>Strength<span style={{ color: 'var(--breath)' }}>■</span>Yoga<span style={{ color: 'var(--bad)' }}>▢</span>Missed</div></div>
         <div className="card">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, k) => <span key={k} className="small muted" style={{ textAlign: 'center' }}>{d}</span>)}
-            {cells.map(c => <i key={c.key} title={c.key} style={{ aspectRatio: '1', borderRadius: 5, background: CELL[c.kind as keyof typeof CELL],
+            {cells.map(c => <i key={c.key} title={c.key} style={{ aspectRatio: '1', borderRadius: 1, background: CELL[c.kind as keyof typeof CELL],
               border: c.kind === 'miss' ? '1px dashed var(--bad)' : c.key === todayKey ? '1px solid var(--text)' : '1px solid transparent' }} />)}
           </div>
         </div>

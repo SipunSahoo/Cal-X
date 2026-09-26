@@ -31,7 +31,7 @@ export function CheckRow({ on, title, sub, onToggle, tone = 'on' }: { on: boolea
 }
 
 export function Stat({ value, label }: { value: ReactNode; label: string }) {
-  return <div className="card stat"><div className="num">{value}</div><div className="small muted">{label}</div></div>
+  return <div className="stat"><div className="num">{value}</div><div className="tag">{label}</div></div>
 }
 
 export function Choice<T extends string | number>({ options, value, onChange }: { options: [T, string][]; value: T; onChange: (v: T) => void }) {
@@ -42,9 +42,20 @@ export function Choice<T extends string | number>({ options, value, onChange }: 
   )
 }
 
+export function Stepper({ value, onChange, min = 0, max = 999, step = 1, suffix = '' }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
+  return (
+    <span className="row" style={{ gap: 4 }}>
+      <button className="chip" style={{ width: 34, height: 34 }} aria-label="Less" onClick={() => onChange(Math.max(min, value - step))}>−</button>
+      <b className="num" style={{ fontSize: 18, minWidth: 44, textAlign: 'center' }}>{value}{suffix}</b>
+      <button className="chip" style={{ width: 34, height: 34 }} aria-label="More" onClick={() => onChange(Math.min(max, value + step))}>+</button>
+    </span>
+  )
+}
+
 export const TAB_ICONS: Record<string, ReactNode> = {
   today: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
   skills: <><circle cx="12" cy="5" r="2.5" /><circle cx="6" cy="19" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="M12 7.5v4l-6 5M12 11.5l6 5" /></>,
+  breathe: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3.5" /></>,
   progress: <path d="M4 20V11M10 20V5M16 20v-6M2 20h20" />,
   you: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
 }
