@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { mmss, timeline, type BreathSequence, type Segment } from '../data/breathing'
+import { allPatterns, mmss, timeline, type BreathSequence, type Segment } from '../data/breathing'
 import { cue, unlockCues } from '../engine/cues'
 import { dayKey } from '../engine/progression'
 import { setState, useStore } from '../store'
@@ -16,7 +16,7 @@ export default function BreathPlayer({ seq, onClose }: { seq: BreathSequence; on
   const s = useStore()
   const prefs = s.breath.prefs
   const segs = useMemo<Timed[]>(() => {
-    const list: Segment[] = [{ kind: 'rest', label: 'Get ready', dur: GET_READY, from: 0, to: 0, step: -1, round: 1, rounds: 1, patternName: seq.name }, ...timeline(seq, s.breath.patterns)]
+    const list: Segment[] = [{ kind: 'rest', label: 'Get ready', dur: GET_READY, from: 0, to: 0, step: -1, round: 1, rounds: 1, patternName: seq.name }, ...timeline(seq, allPatterns(s.breath))]
     let t = 0
     return list.map(sg => { const x = { ...sg, start: t, end: t + sg.dur }; t += sg.dur; return x })
   }, [seq]) // eslint-disable-line react-hooks/exhaustive-deps

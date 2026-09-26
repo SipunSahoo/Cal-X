@@ -15,7 +15,8 @@ export interface BreathSequence { id: string; name: string; steps: BreathStep[] 
 export interface BreathPrefs { sound: boolean; haptic: boolean; volume: number }
 export interface BreathState { patterns: BreathPattern[]; sequences: BreathSequence[]; prefs: BreathPrefs }
 
-export const DEFAULT_BREATH: BreathState = {
+// App-suggested presets: fixed, never stored. The user's own patterns/sequences live in BreathState.
+export const PRESETS: { patterns: BreathPattern[]; sequences: BreathSequence[] } = {
   patterns: [
     { id: 'box', name: 'Box breathing', inhale: 4, hold1: 4, exhale: 4, hold2: 4, note: 'Even and steady. Good before training.' },
     { id: 'nadi', name: 'Nadi Shodhana', inhale: 4, hold1: 4, exhale: 8, hold2: 0, alternate: true, note: 'Alternate nostrils. Slow and silent at night.' },
@@ -32,8 +33,17 @@ export const DEFAULT_BREATH: BreathState = {
     ] },
     { id: 'pretrain', name: 'Before training', steps: [{ kind: 'breath', patternId: 'box', rounds: 8 }] },
   ],
-  prefs: { sound: true, haptic: true, volume: 0.45 },
 }
+
+export const DEFAULT_BREATH: BreathState = { patterns: [], sequences: [], prefs: { sound: true, haptic: true, volume: 0.45 } }
+
+const PRESET_IDS = new Set([...PRESETS.patterns, ...PRESETS.sequences].map(x => x.id))
+export const isPreset = (id: string) => PRESET_IDS.has(id)
+/** User's own items (older saves also stored copies of the presets; those are skipped). */
+export const myPatterns = (b: BreathState) => b.patterns.filter(p => !isPreset(p.id))
+export const mySequences = (b: BreathState) => b.sequences.filter(q => !isPreset(q.id))
+/** Every pattern a sequence can use: presets first, then the user's. */
+export const allPatterns = (b: BreathState) => [...PRESETS.patterns, ...myPatterns(b)]
 
 export type PhaseKind = 'inhale' | 'hold' | 'exhale' | 'rest'
 export interface Segment {
