@@ -111,7 +111,7 @@ function PhaseBar({ p }: { p: BreathPattern }) {
 function PatternSheet({ initial, onClose, onPlay }: { initial: BreathPattern; onClose: () => void; onPlay: (s: BreathSequence) => void }) {
   const s = useStore()
   const [p, setP] = useState(initial)
-  const [rounds, setRounds] = useState(8)
+  const [rounds, setRounds] = useState(10)
   const exists = s.breath.patterns.some(x => x.id === p.id)
   const inUse = s.breath.sequences.some(q => q.steps.some(st => st.kind === 'breath' && st.patternId === p.id))
   const save = () => setBreath(b => ({ ...b, patterns: exists ? b.patterns.map(x => x.id === p.id ? p : x) : [...b.patterns, p] }))
@@ -125,9 +125,21 @@ function PatternSheet({ initial, onClose, onPlay }: { initial: BreathPattern; on
             <Stepper value={p[k] as number} min={min} max={30} suffix="s" onChange={v => setP({ ...p, [k]: v })} /></div>
         ))}
         <CheckRow on={!!p.alternate} title="Alternate nostrils" sub="Shows left / right on each breath" onToggle={() => setP({ ...p, alternate: !p.alternate })} />
-        <div className="item"><span className="grow">Rounds to practise now</span><Stepper value={rounds} min={1} max={99} onChange={setRounds} /></div>
       </div>
-      <div className="small muted">One round = {p.inhale + p.hold1 + p.exhale + p.hold2}s · {rounds} rounds = {mmss((p.inhale + p.hold1 + p.exhale + p.hold2) * rounds)}</div>
+      <div className="section-head" style={{ marginTop: 4 }}><h2>Rounds</h2><span className="tag">1 round = {cycleSeconds(p)}s</span></div>
+      <div className="grid3">
+        {[5, 10, 20, 30, 40, 50].map(n => (
+          <button key={n} className="tile mini" aria-pressed={rounds === n} onClick={() => setRounds(n)}
+            style={rounds === n ? { borderColor: 'var(--breath)', background: 'color-mix(in srgb, var(--breath) 12%, var(--panel))' } : undefined}>
+            <span className="n" style={{ fontSize: 22, color: rounds === n ? 'var(--breath)' : undefined }}>{n}</span>
+            <span className="d">{mmss(cycleSeconds(p) * n)}</span>
+          </button>
+        ))}
+      </div>
+      <div className="tile row">
+        <span className="grow"><span className="t">Custom</span><div className="d">{rounds} rounds · {mmss(cycleSeconds(p) * rounds)}</div></span>
+        <Stepper value={rounds} min={1} max={200} onChange={setRounds} />
+      </div>
       <button className="btn breath" onClick={() => { save(); onPlay({ id: 'quick', name: p.name, steps: [{ kind: 'breath', patternId: p.id, rounds }] }) }}>Save & start</button>
       <div className="row">
         <button className="btn ghost" onClick={() => { save(); onClose() }}>Save</button>
