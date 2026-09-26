@@ -4,6 +4,7 @@ import { parseDay, trainingNode, type Rules } from '../engine/progression'
 import { EQUIP_ICON, Icon } from '../icons'
 import { exportBackup, importBackup, resetAll, setState, useStore } from '../store'
 import { toast } from '../ui'
+import Reminders from './Reminders'
 
 const RULES: { k: keyof Rules; label: string; min: number; max: number; step: number; fmt: (v: number) => string }[] = [
   { k: 'maxRpe', label: 'Max effort to progress', min: 7, max: 9, step: 1, fmt: v => `${v}/10` },
@@ -34,6 +35,8 @@ export default function You() {
         </div>
         <div className="d">Training since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · strength Mon / Wed / Fri</div>
       </div>
+
+      <Reminders />
 
       <section className="section">
         <div className="section-head"><h2>Equipment</h2><span className="tag">tap to toggle</span></div>

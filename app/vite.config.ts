@@ -23,6 +23,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['push-sw.js'], // reminder notifications
         // app shell + Latin fonts precached so the app works fully offline
         globPatterns: ['**/*.{js,css,html,png,svg}', '**/*latin-wdth*.woff2'],
       },

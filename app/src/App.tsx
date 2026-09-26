@@ -1,4 +1,5 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { cacheReminders } from './engine/push'
 import { useStore } from './store'
 import { Toaster } from './ui'
 import { Icon } from './icons'
@@ -20,6 +21,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today')
   const [training, setTraining] = useState(false)
   const main = useRef<HTMLElement>(null)
+  // keep the service worker's copy of reminder texts fresh
+  useEffect(() => { if (s.pushOn) void cacheReminders(s.reminders) }, [s.pushOn, s.reminders])
   const go = (t: Tab) => { setTab(t); main.current?.scrollTo(0, 0) }
 
   if (!s.onboarded) return <Suspense><Onboarding /><Toaster /></Suspense>

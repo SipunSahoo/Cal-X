@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { DEFAULT_BREATH } from './data/breathing'
+import { DEFAULT_REMINDERS } from './data/reminders'
 import { DEFAULT_RULES, dayKey, type State } from './engine/progression'
 
 const KEY = 'calx-state-v1'
@@ -7,6 +8,7 @@ const KEY = 'calx-state-v1'
 const fresh = (): State => ({
   version: 1, onboarded: false, startDate: dayKey(), equipment: ['mat', 'bricks', 'belt', 'handles', 'dumbbell', 'gripper'],
   mastered: [], targets: {}, sessions: [], checks: {}, readiness: {}, rules: { ...DEFAULT_RULES }, breath: structuredClone(DEFAULT_BREATH),
+  reminders: structuredClone(DEFAULT_REMINDERS), pushOn: false,
 })
 
 function load(): State {

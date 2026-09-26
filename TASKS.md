@@ -76,6 +76,8 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Recovery-aware sessions (readiness score → lighter session)
 - [x] Pain flag → stop progression for that exercise + "see a professional" guidance
 - [x] Breathing module: custom 4-phase patterns (inhale · hold · exhale · hold), sequences mixing patterns + pauses, animated fill circle, sound + haptic cue on every phase change, auto-ticks morning/night sadhana
+- [x] Push reminders: editable times/days per task (defaults from the blueprint), Cloudflare Worker cron sends Web Push (worker/), deployed by the Pages workflow
+- [x] Weekly plan screen (Today → "Week N plan"): week, morning/evening flow, strength-day blocks, progression rules
 - [ ] Meditation timer (Dhyana), run logging
 - [ ] AI weekly coach (optional)
 

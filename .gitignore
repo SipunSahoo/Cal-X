@@ -3,3 +3,4 @@ dist/
 *.pdf
 *.local
 .DS_Store
+.secrets/

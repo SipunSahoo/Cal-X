@@ -5,6 +5,7 @@ import { CHECK_ICON, Icon, exIcon } from '../icons'
 import { setState, useStore } from '../store'
 import { CheckRow, Choice, Sheet } from '../ui'
 import { NodeSheet } from './Skills'
+import Plan from './Plan'
 
 export default function Today({ onStart, onBreathe }: { onStart: () => void; onBreathe: () => void }) {
   const s = useStore()
@@ -12,6 +13,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const monday = addDays(now, -((now.getDay() + 6) % 7))
   const [sel, setSel] = useState(todayKey)
   const [sheet, setSheet] = useState<null | 'checkin' | string>(null)
+  const [showPlan, setShowPlan] = useState(false)
   const selDate = parseDay(sel), plan = WEEK[selDate.getDay()], isToday = sel === todayKey
   const week = Math.max(1, Math.floor((now.getTime() - parseDay(s.startDate).getTime()) / 6048e5) + 1)
   const r = s.readiness[todayKey]
@@ -44,7 +46,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
           <div className="eyebrow">{isToday ? 'Today' : selDate.toLocaleDateString('en-GB', { weekday: 'long' })}</div>
           <h1 style={{ marginTop: 2 }}>{selDate.toLocaleDateString('en-GB', { weekday: isToday ? 'long' : undefined, day: 'numeric', month: 'long' })}</h1>
         </div>
-        <span className="chip">Week {week}</span>
+        <button className="chip" onClick={() => setShowPlan(true)}><Icon name="calendar" size={15} /> Week {week} plan</button>
       </header>
 
       <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: 16 }}>
@@ -138,6 +140,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
         </button>
       </section>
 
+      {showPlan && <Plan onClose={() => setShowPlan(false)} />}
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}
     </>

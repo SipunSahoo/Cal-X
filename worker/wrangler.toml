@@ -1,0 +1,10 @@
+name = "calx-push"
+main = "index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+# the deploy workflow replaces KV_ID_PLACEHOLDER with the real namespace id (created automatically)
+kv_namespaces = [{ binding = "KV", id = "KV_ID_PLACEHOLDER" }]
+
+[triggers]
+crons = ["* * * * *"]

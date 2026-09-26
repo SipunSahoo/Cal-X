@@ -20,18 +20,49 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
-    defaults:
-      run:
-        working-directory: app
+    env:
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' && secrets.VAPID_JWK != '' }}
     steps:
       - uses: actions/checkout@v4
+
+      # ---- reminder push server (Cloudflare Worker); skipped until the Cloudflare secrets exist ----
+      - name: Create or find the reminder storage (KV)
+        if: env.HAS_CF == 'true'
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/storage/kv/namespaces"
+          id=$(curl -fsS -H "Authorization: Bearer $CF_TOKEN" "$api?per_page=100" | jq -r '.result[] | select(.title=="calx-push") | .id')
+          if [ -z "$id" ]; then
+            id=$(curl -fsS -X POST -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" -d '{"title":"calx-push"}' "$api" | jq -r '.result.id')
+          fi
+          sed -i "s/KV_ID_PLACEHOLDER/$id/" worker/wrangler.toml
+      - name: Deploy reminder server
+        id: worker
+        if: env.HAS_CF == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          wranglerVersion: '4'
+          secrets: VAPID_JWK
+        env:
+          VAPID_JWK: ${{ secrets.VAPID_JWK }}
+
+      # ---- app ----
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: app/package-lock.json
       - run: npm ci
+        working-directory: app
       - run: npm run build
+        working-directory: app
+        env:
+          VITE_PUSH_URL: ${{ steps.worker.outputs.deployment-url }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
