@@ -149,8 +149,10 @@ export function BodySection() {
           <span><div className="n">{last ? fmt(last.kg) : '–'}</div><div className="d">kg{last && first && last !== first ? ` · ${last.kg - first.kg >= 0 ? '+' : ''}${fmt(last.kg - first.kg)} total` : ''}</div></span></div>
         <div className="tile"><span className={`ico sm ${verdict?.tone === 'good' ? 'good' : 'muted'}`}><Icon name="progress" size={18} /></span>
           <span><div className="n">{rate != null ? `${rate >= 0 ? '+' : ''}${rate.toFixed(2)}` : '–'}</div><div className="d">{verdict ? verdict.label : 'kg / week'}</div></span></div>
-        <div className="tile"><span className="ico sm muted"><Icon name="you" size={18} /></span>
-          <span><div className="n">{last && b.height ? fmt(bmi(last.kg, b.height)) : '–'}</div><div className="d">{last && b.height ? `BMI · ${bmiLabel(bmi(last.kg, b.height))}` : 'BMI'}</div></span></div>
+        <button className="tile" onClick={() => setSheet(b.height && !last ? 'log' : 'goal')} style={!b.height ? { borderStyle: 'dashed' } : undefined}>
+          <span className="ico sm muted"><Icon name={b.height ? 'you' : 'ruler'} size={18} /></span>
+          <span><div className="n">{last && b.height ? fmt(bmi(last.kg, b.height)) : '–'}</div>
+            <div className="d">{!b.height ? 'BMI · add height' : !last ? 'BMI · log weight' : `BMI · ${bmiLabel(bmi(last.kg, b.height))}`}</div></span></button>
       </div>
 
       <div className="tile">
