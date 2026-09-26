@@ -1,0 +1,485 @@
+<title>Cal-X Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --page:#0b0d11; --bg:#11141a; --card:#1a1f27; --card-2:#222834; --line:#2b3240;
+  --text:#ece8e1; --muted:#98a0ad; --accent:#f2a33a; --accent-ink:#1a1206;
+  --steel:#86a9c8; --good:#5dbb8a; --warn:#e6b450; --bad:#e36a5c; --locked:#3a414d;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --page:#dde1e6; --bg:#eef0f3; --card:#ffffff; --card-2:#f3f5f7; --line:#d5dae0;
+  --text:#151a21; --muted:#5b6472; --accent:#c9780f; --accent-ink:#ffffff;
+  --steel:#3f6f99; --good:#2f8f5f; --warn:#a87812; --bad:#c2463a; --locked:#c3cad3;
+}}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --page:#dde1e6; --bg:#eef0f3; --card:#ffffff; --card-2:#f3f5f7; --line:#d5dae0;
+  --text:#151a21; --muted:#5b6472; --accent:#c9780f; --accent-ink:#ffffff;
+  --steel:#3f6f99; --good:#2f8f5f; --warn:#a87812; --bad:#c2463a; --locked:#c3cad3;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--text);font:15px/1.45 var(--body);display:flex;justify-content:center;align-items:center;padding-inline:16px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* phone frame */
+.phone{position:relative;width:100%;max-width:400px;height:min(820px,calc(100% - 32px));background:var(--bg);border:1px solid var(--line);border-radius:36px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+@media (max-width:500px){body{padding-inline:0}.phone{max-width:none;height:100%;border:0;border-radius:0;box-shadow:none}}
+.screen{position:absolute;inset:0 0 72px;overflow-y:auto;padding:20px 16px 24px}
+.full{position:absolute;inset:0;background:var(--bg);z-index:5;overflow-y:auto;padding:16px}
+
+/* tabs */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:72px;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--muted);letter-spacing:.04em}
+.tabs button[aria-current="true"]{color:var(--accent)}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* type */
+h1,h2,h3,.num{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;text-wrap:balance}
+h1{font-size:34px;line-height:1}
+h2{font-size:22px;line-height:1.1}
+h3{font-size:18px}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.section{margin-top:22px;display:flex;flex-direction:column;gap:10px}
+
+/* components */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--card-2);border:1px solid var(--line);white-space:nowrap}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-size:20px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.btn.ghost{background:var(--card-2);color:var(--text);border:1px solid var(--line);font-size:16px}
+.list{display:flex;flex-direction:column}
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.check{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:14px;font-weight:700}
+.check.on{background:var(--steel);border-color:var(--steel);color:var(--bg)}
+.bar{height:6px;border-radius:6px;background:var(--card-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.toast{position:absolute;left:16px;right:16px;bottom:88px;z-index:20;background:var(--text);color:var(--bg);padding:12px 14px;border-radius:12px;font-weight:600;font-size:14px}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:10;display:flex;align-items:flex-end}
+.sheet{background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:20px 16px 28px;max-height:85%;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(40px);opacity:.4}}}
+</style>
+
+<div class="phone" id="phone">
+  <div class="screen" id="screen"></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div id="layer"></div>
+</div>
+
+<script>
+// ---------- data (sample; real app loads this from storage) ----------
+const TIERS={F:'Foundation',B:'Beginner',I:'Intermediate',A:'Advanced',E:'Elite'};
+// [id, name, type r=reps h=hold, rangeLow, rangeHigh, tier, needsBar, cue]
+const TRACKS=[
+ {id:'push',name:'Push',nodes:[
+  ['incline_pu','Incline push-up','r',8,15,'F',0,'Hands on bricks, body one straight line.'],
+  ['knee_pu','Knee push-up','r',8,15,'F',0,'Hips in line with shoulders, chest to floor.'],
+  ['pushup','Push-up','r',5,12,'B',0,'Elbows ~45°, ribs down, glutes tight, chest touches floor.'],
+  ['deficit_pu','Deficit push-up','r',6,12,'B',0,'On push-up handles; sink chest below hand level.'],
+  ['diamond_pu','Diamond push-up','r',6,12,'I',0,'Hands together under chest, elbows brush ribs.'],
+  ['archer_pu','Archer push-up','r',4,8,'I',0,'Shift weight to one arm, other arm stays straight.'],
+  ['pseudo_pu','Pseudo planche push-up','r',5,10,'A',0,'Hands by hips, lean forward, protract shoulders.'],
+  ['oa_pu','One-arm push-up','r',1,5,'E',0,'Wide stance, square hips, slow lowering.']]},
+ {id:'pull',name:'Pull',nodes:[
+  ['db_row','Dumbbell row','r',8,15,'F',0,'Flat back, pull elbow to hip, pause at top.'],
+  ['table_row','Table row','r',6,12,'B',0,'Under a sturdy table. Test it first. Body straight.'],
+  ['dead_hang','Dead hang','h',20,60,'B',1,'Full grip, shoulders active, no swinging.'],
+  ['neg_pullup','Negative pull-up','r',3,6,'I',1,'Jump to top, lower for 5 seconds.'],
+  ['pullup','Pull-up','r',3,10,'I',1,'Dead hang start, chin over bar, no kipping.'],
+  ['muscle_up','Muscle-up','r',1,5,'A',1,'Explosive high pull, fast transition over bar.'],
+  ['oa_pullup','One-arm pull-up','r',1,3,'E',1,'Years of work. Assisted versions first.']]},
+ {id:'legs',name:'Legs',nodes:[
+  ['bw_squat','Bodyweight squat','r',15,30,'F',0,'Heels down, knees track toes, hips below knees.'],
+  ['split_squat','Split squat','r',8,12,'F',0,'Back knee to floor, front shin vertical.'],
+  ['goblet_squat','Goblet squat','r',8,15,'B',0,'Dumbbell at chest, elbows inside knees at bottom.'],
+  ['bulgarian','Bulgarian split squat','r',8,12,'I',0,'Rear foot on a chair, torso slightly forward.'],
+  ['assist_pistol','Assisted pistol','r',5,10,'I',0,'Hold a door frame or yoga belt, one leg down.'],
+  ['pistol','Pistol squat','r',3,8,'A',0,'Free leg straight, full depth, controlled.']]},
+ {id:'core',name:'Core',nodes:[
+  ['dead_bug','Dead bug','r',8,12,'F',0,'Lower back glued to floor.'],
+  ['plank','Plank','h',30,60,'F',0,'Squeeze glutes, push floor away.'],
+  ['hollow_hold','Hollow hold','h',15,40,'F',0,'Lower back flat, arms by ears, legs low.'],
+  ['tuck_lsit','Tuck L-sit','h',10,20,'B',0,'On bricks or handles, shoulders pushed down.'],
+  ['lsit','L-sit','h',10,20,'I',0,'Legs straight and level, toes pointed.'],
+  ['vsit','V-sit','h',3,10,'E',0,'Hips behind hands, legs rising above horizontal.']]},
+ {id:'handstand',name:'Handstand',nodes:[
+  ['pike_pu','Pike push-up','r',5,10,'B',0,'Hips high, head goes in front of hands.'],
+  ['elev_pike','Elevated pike push-up','r',5,10,'I',0,'Feet on chair, hands on bricks for depth.'],
+  ['ctw_hs','Chest-to-wall handstand','h',20,60,'I',0,'Belly to wall, straight line, push tall.'],
+  ['free_hs','Freestanding handstand','h',10,30,'A',0,'Balance with fingers, stack hips over shoulders.'],
+  ['hspu','Handstand push-up','r',3,8,'A',0,'Wall-supported, head to a mat, tripod shape.'],
+  ['press_hs','Press to handstand','r',1,5,'E',0,'Needs compression + planche lean strength.']]},
+ {id:'planche',name:'Planche',nodes:[
+  ['pl_lean','Planche lean','h',10,30,'B',0,'Arms straight, lean forward, shoulders past hands.'],
+  ['crow','Crow pose (Bakasana)','h',10,30,'B',0,'Also practised on Saturday yoga. Knees high on arms.'],
+  ['tuck_pl','Tuck planche','h',5,15,'A',0,'Hips level with shoulders, arms locked.'],
+  ['adv_tuck_pl','Advanced tuck planche','h',5,15,'A',0,'Flat back, knees away from chest.'],
+  ['straddle_pl','Straddle planche','h',3,10,'E',0,'Legs wide and straight, body horizontal.'],
+  ['full_pl','Full planche','h',3,8,'E',0,'Body fully horizontal, legs together.']]},
+];
+const ACCESSORIES=[
+  ['sl_bridge','Single-leg glute bridge','r',8,15,'F',0,'Drive through heel, hips level. Per side.'],
+  ['gripper','Grip trainer squeezes','r',10,25,'F',0,'Full close, slow open. Per hand.'],
+];
+const EX={}; // id -> exercise object
+TRACKS.forEach(t=>t.nodes=t.nodes.map((n,i)=>(EX[n[0]]=mk(n,t.id,i))));
+ACCESSORIES.forEach(n=>EX[n[0]]=mk(n,null,0));
+function mk([id,name,type,lo,hi,tier,bar,cue],track,i){return{id,name,hold:type==='h',lo,hi,tier,bar:!!bar,cue,track,i}}
+
+const DAYS=[ // weekly blueprint from the PDF, Mon..Sun
+ {d:'Mon',n:28,kind:'strength',yoga:'Chest & upper-back decompression',eve:'Rest or walk'},
+ {d:'Tue',n:29,kind:'yoga',yoga:'Hip mobility & Siddhasana prep',eve:'Run 20–30 min'},
+ {d:'Wed',n:30,kind:'strength',yoga:'Spinal twists & side bends',eve:'Rest or walk'},
+ {d:'Thu',n:1,kind:'yoga',yoga:'Backbends (spine extension)',eve:'Run 20–30 min'},
+ {d:'Fri',n:2,kind:'strength',yoga:'Forward folds (hamstrings & back)',eve:'Rest or walk'},
+ {d:'Sat',n:3,kind:'yoga',yoga:'Arm balances (Bakasana) & inversions',eve:'Optional run'},
+ {d:'Sun',n:4,kind:'rest',yoga:'Full physical rest, gentle walk',eve:'Rest'},
+];
+
+const S={
+  tab:'today', day:0, bar:false,
+  mastered:new Set(['incline_pu','knee_pu','bw_squat','split_squat','dead_bug','plank']),
+  presc:{pushup:7,db_row:11,goblet_squat:10,hollow_hold:20,pike_pu:6,pl_lean:15,sl_bridge:11,gripper:18}, // current targets
+  last:{pushup:[7,7,6],db_row:[11,11,10],goblet_squat:[10,10,9],hollow_hold:[20,20,15],pike_pu:[6,6,5],pl_lean:[15,15,10],sl_bridge:[11,11],gripper:[18,17]},
+  best:{pushup:7,knee_pu:15,plank:60,hollow_hold:20,goblet_squat:10,pike_pu:6,pl_lean:15,db_row:11},
+  checks:{}, readiness:null, rules:{maxRpe:8,failPct:75},
+  done:{}, workout:null, sheet:null,
+};
+
+// ---------- helpers ----------
+const $=s=>document.querySelector(s);
+const u=ex=>ex.hold?'s':'';
+const setsFor=ex=>ex.track?3:2;
+function currentNode(t){ // first unmastered node; fall back to last mastered if blocked by missing bar
+  const i=t.nodes.findIndex(n=>!S.mastered.has(n.id));
+  if(i<0) return t.nodes.at(-1);
+  if(t.nodes[i].bar&&!S.bar&&i>0) return t.nodes[i-1];
+  return t.nodes[i];
+}
+function status(n){
+  if(S.mastered.has(n.id)) return 'done';
+  const t=TRACKS.find(t=>t.id===n.track);
+  if(n.bar&&!S.bar) return 'bar';
+  const prev=t.nodes[n.i-1];
+  return !prev||S.mastered.has(prev.id)?'current':'locked';
+}
+function session(){
+  const light=S.readiness&&S.readiness.score<50;
+  return [...TRACKS.map(currentNode),EX.sl_bridge,EX.gripper].map(ex=>{
+    const sets=Math.max(1,setsFor(ex)-(light?1:0));
+    return {ex,sets,target:S.presc[ex.id]??ex.lo};
+  });
+}
+function toast(msg){const d=document.createElement('div');d.className='toast';d.textContent=msg;$('#phone').append(d);setTimeout(()=>d.remove(),2600)}
+// ---------- Today ----------
+function checkRow(key,title,sub,extra=''){
+  const on=S.checks[S.day+key];
+  return `<div class="item"><button class="check ${on?'on':''}" data-a="check" data-v="${key}" aria-label="Mark ${title} done">${on?'✓':''}</button>
+    <div style="flex:1"><div style="font-weight:600">${title}</div><div class="small muted">${sub}</div></div>${extra}</div>`;
+}
+function renderToday(){
+  const day=DAYS[S.day], isToday=S.day===0, r=S.readiness;
+  const strip=DAYS.map((d,i)=>`<button data-a="day" data-v="${i}" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:12px;${i===S.day?'background:var(--card-2);border:1px solid var(--line)':''}">
+      <span class="small muted">${d.d[0]}</span><span class="num" style="font-size:20px">${d.n}</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:${d.kind==='strength'?'var(--accent)':d.kind==='yoga'?'var(--steel)':'var(--locked)'}"></span></button>`).join('');
+
+  let main;
+  if(day.kind==='strength'){
+    const ses=session(), done=S.done[S.day];
+    const mins=Math.round(ses.reduce((a,s)=>a+s.sets*((s.ex.hold?s.target:s.target*3)+(s.ex.track?90:60)),0)/60);
+    main=`<div class="card stack">
+      <div class="row between"><div><div class="eyebrow">Strength circuit · 8 exercises</div><h2 style="margin-top:4px">Full body</h2></div>
+        <div style="text-align:right"><div class="num" style="font-size:26px">${mins}<span class="small muted"> min</span></div><div class="small muted">+ warm-up & cool-down</div></div></div>
+      ${r&&r.score<50?`<div class="chip" style="color:var(--warn)">Lighter session: 1 set fewer each (low readiness)</div>`:''}
+      <div class="list">${ses.map(s=>`<button class="item" data-a="node" data-v="${s.ex.id}" style="text-align:left">
+          <div style="flex:1"><div style="font-weight:600">${s.ex.name}</div><div class="small muted">${s.ex.track?TIERS[s.ex.tier]+' · '+s.ex.track:'Accessory'}${S.last[s.ex.id]?' · last '+S.last[s.ex.id].join('·')+u(s.ex):''}</div></div>
+          <div class="num" style="font-size:20px">${s.sets} × ${s.target}${u(s.ex)}</div></button>`).join('')}</div>
+      ${done?`<div class="chip on" style="justify-content:center">✓ Completed</div>`:isToday?`<button class="btn" data-a="start">Start workout</button>`:`<div class="small muted" style="text-align:center">Preview. Targets update after each session.</div>`}
+    </div>
+    <div class="section"><div class="eyebrow">Warm-up & cool-down</div><div class="card list" style="padding-block:4px">
+      ${checkRow('warm','Wrist prep + brick scapular presses','3 min')}
+      ${checkRow('sn1','Surya Namaskar · 5 crisp rounds','~4 min, 1 breath per movement')}
+      ${checkRow('sn2','Surya Namaskar · 5 slow rounds','~6 min, knees down on the lowering')}
+      ${checkRow('ysec',day.yoga,'2–3 deep holds + counterpose, 8–10 min')}
+      ${checkRow('shav','Shavasana','5 min')}</div></div>`;
+  } else if(day.kind==='yoga'){
+    main=`<div class="card stack"><div class="eyebrow">Hatha yoga · 35 min</div><h2>${day.yoga}</h2>
+      <div class="small muted">Yoga is a simple check-off for now. Full yoga tracking comes in a later phase.</div>
+      <div class="list">${checkRow('yoga','Yoga session done','Main physical work')}</div></div>`;
+  } else {
+    main=`<div class="card stack"><div class="eyebrow">Rest day</div><h2>Recover</h2><div class="small muted">${day.yoga}. Strength comes from rest days too.</div></div>`;
+  }
+
+  const push=currentNode(TRACKS[0]);
+  return `<div class="row between"><div><div class="eyebrow">${isToday?'Today':'Plan'}</div><h1 style="margin-top:4px">${day.d} ${day.n} ${S.day<3?'Sep':'Oct'}</h1></div>
+      <span class="chip" title="Prototype uses sample data">Demo data</span></div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:16px">${strip}</div>
+
+    ${isToday&&day.kind==='strength'?`<button class="card row" data-a="checkin" style="margin-top:16px;width:100%;text-align:left">
+      ${r?`<div class="num" style="font-size:34px;color:${r.score>=70?'var(--good)':r.score>=50?'var(--warn)':'var(--bad)'}">${r.score}</div><div style="flex:1"><div style="font-weight:600">Readiness</div><div class="small muted">${r.pain?'Pain reported. Avoid painful movements; see a professional if it persists.':r.score>=70?'Good to train as planned.':r.score>=50?'Train as planned, stop 1–2 reps short.':'Lighter session applied.'}</div></div>`
+       :`<div style="flex:1"><div style="font-weight:600">How do you feel today?</div><div class="small muted">10-second check-in. Adjusts today's session.</div></div><span class="chip">Check in</span>`}</button>`:''}
+
+    <div class="section">${main}</div>
+
+    ${day.kind==='strength'?`<div class="section"><div class="eyebrow">Next unlock</div><div class="card"><div class="row between"><div style="font-weight:600">${push.name}</div><div class="small muted">goal 3 × ${push.hi}</div></div>
+      <div class="bar" style="margin-top:10px"><i style="width:${Math.min(100,Math.round((S.presc[push.id]??push.lo)/push.hi*100))}%"></i></div>
+      <div class="small muted" style="margin-top:8px">Master it to unlock <b style="color:var(--text)">${TRACKS[0].nodes[push.i+1]?.name}</b>.</div></div></div>`:''}
+
+    <div class="section"><div class="eyebrow">Daily rhythm</div><div class="card list" style="padding-block:4px">
+      ${checkRow('morning','Morning sadhana','Loosening 3m · Pranayama 10m · Dhyana 20–30m')}
+      ${checkRow('eve','Evening',day.eve)}
+      ${checkRow('night','Night sadhana','3 min slow Nadi Shodhana · Dhyana 20–30m')}</div></div>`;
+}
+
+function checkinSheet(){
+  const c=S.ci||(S.ci={sleep:2,energy:3,sore:2,pain:false});
+  const opts=(k,vals)=>vals.map((l,i)=>`<button class="chip ${c[k]===i?'on':''}" data-a="ci" data-v="${k}:${i}">${l}</button>`).join('');
+  return `<h2>Daily check-in</h2>
+    <div class="stack"><div class="eyebrow">Sleep</div><div class="row" style="flex-wrap:wrap;gap:6px">${opts('sleep',['<6h','6–7h','7–8h','8h+'])}</div></div>
+    <div class="stack"><div class="eyebrow">Energy</div><div class="row" style="flex-wrap:wrap;gap:6px">${opts('energy',['Very low','Low','OK','Good','Great'])}</div></div>
+    <div class="stack"><div class="eyebrow">Muscle soreness</div><div class="row" style="flex-wrap:wrap;gap:6px">${opts('sore',['None','Light','Moderate','High','Severe'])}</div></div>
+    <button class="item" data-a="ci" data-v="pain:x" style="text-align:left"><span class="check ${c.pain?'on':''}">${c.pain?'✓':''}</span><div><div style="font-weight:600">Any sharp or joint pain?</div><div class="small muted">Cal-X can't diagnose pain. If it's sharp or lasting, see a physio or doctor.</div></div></button>
+    <button class="btn" data-a="ci-save">Save</button>`;
+}
+function readinessScore(c){return Math.round(100*(0.4*[.3,.6,.9,1][c.sleep]+0.35*c.energy/4+0.25*(1-c.sore/4)))}
+// ---------- progression rules (explainable, thresholds live in S.rules) ----------
+function evaluate({ex,sets,target},vals,rpes,pain){
+  const U=u(ex), step=ex.hold?5:1, R=S.rules;
+  if(pain) return {tag:'Hold',color:'var(--bad)',next:target,why:'Pain flagged. No progression until it is gone. If it persists, see a physio or doctor.'};
+  if(!vals.length) return {tag:'Hold',color:'var(--muted)',next:target,why:'Skipped. No change.'};
+  const rpe=Math.max(...rpes), total=vals.reduce((a,b)=>a+b,0), pct=Math.round(total/(sets*target)*100);
+  const allHit=vals.length>=sets&&vals.every(v=>v>=target);
+  if(allHit&&rpe<=R.maxRpe){
+    if(vals.every(v=>v>=ex.hi)){
+      const nxt=ex.track&&TRACKS.find(t=>t.id===ex.track).nodes[ex.i+1];
+      return {tag:'Level up',color:'var(--good)',advance:nxt,next:target,why:`Every set hit ${ex.hi}${U}, the top of the range, at effort ${rpe}/10 or easier. ${ex.name} is mastered.${nxt?` Next session starts ${nxt.name} at ${nxt.lo}${u(nxt)}.`:''}`};
+    }
+    const nt=Math.min(ex.hi,target+(vals.every(v=>v>=target+2*step)?2*step:step));
+    return {tag:'Increase',color:'var(--accent)',next:nt,why:`All ${sets} sets reached ${target}${U} at effort ${rpe}/10 (limit ${R.maxRpe}). Target goes up to ${nt}${U}.`};
+  }
+  if(allHit) return {tag:'Hold',color:'var(--warn)',next:target,why:`Target hit, but effort ${rpe}/10 is above ${R.maxRpe}. Repeat ${target}${U} until it feels controlled.`};
+  if(pct<R.failPct){
+    const nt=Math.max(ex.lo,target-step);
+    return {tag:'Ease off',color:'var(--bad)',next:nt,why:`${total}${U} of ${sets*target}${U} planned (${pct}%) is below the ${R.failPct}% floor. ${nt<target?`Target drops to ${nt}${U}.`:'Already at the range floor. Keep it, or switch to the easier variation.'}`};
+  }
+  return {tag:'Hold',color:'var(--warn)',next:target,why:`${total}${U} of ${sets*target}${U} planned (${pct}%). Close enough to keep ${target}${U}. Aim to hit every set next time.`};
+}
+
+// ---------- workout player ----------
+function startWorkout(){
+  const items=session();
+  S.workout={items,i:0,logs:items.map(()=>[]),rpes:items.map(()=>[]),pain:{},skip:{},val:items[0].target,rpe:7,rest:null,hold:null,t0:Date.now()};
+  try{navigator.wakeLock?.request('screen').catch(()=>{})}catch(e){}
+  draw();
+}
+function renderWorkout(){
+  const w=S.workout, it=w.items[w.i], ex=it.ex, setNo=w.logs[w.i].length+1, U=u(ex);
+  const seg=w.items.map((_,k)=>`<i style="flex:1;height:4px;border-radius:4px;background:${k<w.i?'var(--accent)':k===w.i?'var(--text)':'var(--line)'}"></i>`).join('');
+  const nxt=w.items[w.i+1];
+  if(w.rest) return `<div class="full" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center">
+      <div class="eyebrow">Rest</div><div class="num" id="restT" style="font-size:96px;line-height:1">--</div>
+      <div class="muted">Next: ${w.restNext}</div>
+      <div class="row" style="width:100%;max-width:300px"><button class="btn ghost" data-a="rest-add">+15 s</button><button class="btn" data-a="rest-skip">Skip rest</button></div></div>`;
+  return `<div class="full stack" style="gap:16px">
+    <div class="row between"><button class="chip" data-a="quit">✕ Quit</button><span class="small muted">Exercise ${w.i+1} of ${w.items.length}</span><button class="chip" data-a="finish">Finish</button></div>
+    <div class="row" style="gap:4px">${seg}</div>
+    <div><div class="eyebrow">${ex.track?TIERS[ex.tier]+' · '+ex.track:'Accessory'}</div><h1 style="font-size:42px;margin-top:6px">${ex.name}</h1></div>
+    <div class="row">${Array.from({length:it.sets},(_,k)=>`<span style="width:12px;height:12px;border-radius:50%;background:${k<setNo-1?'var(--accent)':'transparent'};border:2px solid ${k===setNo-1?'var(--text)':'var(--line)'}"></span>`).join('')}<span class="small muted">Set ${setNo} of ${it.sets}</span></div>
+    <div class="row" style="gap:10px">
+      <div class="card" style="flex:1"><div class="eyebrow">Target</div><div class="num" style="font-size:30px">${it.target}${U||' reps'}</div></div>
+      <div class="card" style="flex:1"><div class="eyebrow">Last time</div><div class="num" style="font-size:30px">${S.last[ex.id]?.[setNo-1]!=null?S.last[ex.id][setNo-1]+(U||' reps'):'–'}</div></div></div>
+    ${ex.hold?`<button data-a="hold" class="card" style="text-align:center;padding:18px"><div class="num" id="holdT" style="font-size:56px">${w.hold?'0':w.val}s</div><div class="small muted">${w.hold?'Tap to stop':'Tap to start hold timer'}</div></button>`:''}
+    <div class="row between card" style="padding:10px">
+      <button class="btn ghost" style="width:64px" data-a="val" data-v="-1" aria-label="Less">−</button>
+      <div style="text-align:center"><div class="num" style="font-size:48px;line-height:1">${w.val}</div><div class="small muted">${ex.hold?'seconds':'reps'} done</div></div>
+      <button class="btn ghost" style="width:64px" data-a="val" data-v="1" aria-label="More">+</button></div>
+    <div><div class="eyebrow" style="margin-bottom:8px">How hard was it? (effort out of 10)</div>
+      <div class="row" style="gap:6px">${[[6,'Easy'],[7,'Solid'],[8,'Hard'],[9,'Grind'],[10,'Max']].map(([v,l])=>`<button class="chip ${w.rpe===v?'on':''}" style="flex:1;justify-content:center;flex-direction:column;gap:0;padding:6px 0" data-a="rpe" data-v="${v}"><b>${v}</b><span style="font-size:10px;font-weight:500">${l}</span></button>`).join('')}</div></div>
+    <button class="btn" data-a="set">Complete set</button>
+    <div class="small muted">${ex.cue}</div>
+    <div class="row" style="gap:8px"><button class="chip" data-a="skip">Skip exercise</button><button class="chip" data-a="pain" style="color:var(--bad)">Something hurts</button>
+      <a class="chip" style="color:inherit;text-decoration:none" target="_blank" href="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+' calisthenics tutorial')}">Demo video ↗</a></div>
+    ${nxt?`<div class="small muted">Up next: ${nxt.ex.name} · ${nxt.sets} × ${nxt.target}${u(nxt.ex)}</div>`:''}
+  </div>`;
+}
+function completeSet(){
+  const w=S.workout, it=w.items[w.i];
+  w.logs[w.i].push(w.val); w.rpes[w.i].push(w.rpe);
+  const doneEx=w.logs[w.i].length>=it.sets;
+  if(doneEx&&w.i===w.items.length-1) return finish();
+  if(doneEx){w.i++; w.val=w.items[w.i].target; w.rpe=7}
+  const n=w.items[w.i];
+  w.restNext=`${n.ex.name}, set ${w.logs[w.i].length+1} · ${n.target}${u(n.ex)||' reps'}`;
+  w.rest=Date.now()+(it.ex.track?90:60)*1000;
+  draw();
+}
+function nextExercise(){const w=S.workout; if(w.i===w.items.length-1) return finish(); w.i++; w.val=w.items[w.i].target; w.rpe=7; draw()}
+function finish(){
+  const w=S.workout;
+  w.results=w.items.map((it,k)=>({it,vals:w.logs[k],res:evaluate(it,w.logs[k],w.rpes[k],w.pain[k])}));
+  w.mins=Math.max(1,Math.round((Date.now()-w.t0)/60000)); w.rest=null; w.summary=true; draw();
+}
+function renderSummary(){
+  const w=S.workout, sets=w.logs.flat().length;
+  const prs=w.results.filter(r=>r.vals.length&&Math.max(...r.vals)>(S.best[r.it.ex.id]??0));
+  return `<div class="full stack" style="gap:14px">
+    <div class="eyebrow">Session complete</div><h1>Nice work.</h1>
+    <div class="row" style="gap:10px">${[[w.mins,'minutes'],[sets,'sets'],[prs.length,'new records']].map(([v,l])=>`<div class="card" style="flex:1;text-align:center;padding:12px"><div class="num" style="font-size:30px">${v}</div><div class="small muted">${l}</div></div>`).join('')}</div>
+    <div class="eyebrow" style="margin-top:6px">Coach decisions for next session</div>
+    ${w.results.map(r=>`<div class="card stack" style="gap:6px">
+      <div class="row between"><b>${r.it.ex.name}</b><span class="chip" style="color:${r.res.color}">${r.res.tag}</span></div>
+      <div class="small muted">Logged ${r.vals.length?r.vals.join(' · ')+u(r.it.ex):'nothing'} · target ${r.it.sets} × ${r.it.target}${u(r.it.ex)}</div>
+      <div class="small">${r.res.why}</div></div>`).join('')}
+    <button class="btn" data-a="save">Save & apply</button></div>`;
+}
+function saveWorkout(){
+  const w=S.workout;
+  w.results.forEach(({it,vals,res})=>{
+    const id=it.ex.id;
+    if(vals.length){S.last[id]=vals; S.best[id]=Math.max(S.best[id]??0,...vals)}
+    S.presc[id]=res.next;
+    if(res.advance){S.mastered.add(id); toast(`Unlocked: ${res.advance.name}`)}
+  });
+  S.done[S.day]=true; S.workout=null; draw();
+}
+function tick(){
+  const w=S.workout; if(!w) return;
+  if(w.rest){const s=Math.ceil((w.rest-Date.now())/1000);
+    if(s<=0){w.rest=null; beep(); draw(); return}
+    const el=$('#restT'); if(el) el.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}
+  if(w.hold){const el=$('#holdT'); if(el) el.textContent=Math.floor((Date.now()-w.hold)/1000)+'s'}
+}
+let actx; function beep(){try{actx=actx||new AudioContext();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+.25)}catch(e){}}
+// ---------- Skills ----------
+S.track='push';
+function renderSkills(){
+  const all=TRACKS.flatMap(t=>t.nodes), m=all.filter(n=>S.mastered.has(n.id)).length;
+  const t=TRACKS.find(t=>t.id===S.track);
+  const col={done:'var(--good)',current:'var(--accent)',bar:'var(--locked)',locked:'var(--locked)'};
+  const ladder=t.nodes.map((n,k)=>{const st=status(n), cur=currentNode(t).id===n.id&&st!=='done';
+    return `<button class="row" data-a="node" data-v="${n.id}" style="text-align:left;width:100%;align-items:stretch;gap:14px">
+      <div style="display:flex;flex-direction:column;align-items:center;width:28px">
+        <span style="width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;
+          background:${st==='done'?col.done:cur?col.current:'transparent'};color:var(--bg);border:2px solid ${col[st]}">${st==='done'?'✓':st==='bar'||st==='locked'?'<span style="color:var(--muted)">🔒</span>':''}</span>
+        ${k<t.nodes.length-1?`<span style="flex:1;width:2px;min-height:18px;background:${st==='done'?col.done:'var(--line)'}"></span>`:''}</div>
+      <div style="flex:1;padding-bottom:16px;${st==='locked'||st==='bar'?'opacity:.6':''}">
+        <div class="row between"><b>${n.name}</b><span class="small muted">${TIERS[n.tier]}</span></div>
+        <div class="small muted">${st==='done'?'Mastered':st==='bar'?'Needs a pull-up bar':cur?`Training now · target ${S.presc[n.id]??n.lo}${u(n)} → goal ${n.hi}${u(n)}`:`Goal 3 × ${n.hi}${u(n)}`}</div>
+        ${cur?`<div class="bar" style="margin-top:6px"><i style="width:${Math.round((S.presc[n.id]??n.lo)/n.hi*100)}%"></i></div>`:''}</div></button>`}).join('');
+  return `<div class="eyebrow">Skill tree</div><h1 style="margin-top:4px">${m} of ${all.length} mastered</h1>
+    <div class="row" style="gap:6px;margin-top:14px;overflow-x:auto;padding-bottom:4px">${TRACKS.map(x=>{const d=x.nodes.filter(n=>S.mastered.has(n.id)).length;
+      return `<button class="chip ${x.id===S.track?'on':''}" data-a="track" data-v="${x.id}">${x.name} ${d}/${x.nodes.length}</button>`}).join('')}</div>
+    <div class="card" style="margin-top:14px;padding-bottom:4px">${ladder}</div>
+    ${t.id==='pull'&&!S.bar?`<div class="small muted" style="margin-top:10px">Turn on "Pull-up bar" in You to unlock bar skills.</div>`:''}`;
+}
+function nodeSheet(id){
+  const n=EX[id], st=n.track?status(n):'current', t=n.track&&TRACKS.find(t=>t.id===n.track), prev=t&&t.nodes[n.i-1], nxt=t&&t.nodes[n.i+1];
+  const req=[]; if(prev) req.push([`Master ${prev.name} (3 × ${prev.hi}${u(prev)})`,S.mastered.has(prev.id)]); if(n.bar) req.push(['Pull-up bar',S.bar]);
+  return `<div><div class="eyebrow">${n.track?TIERS[n.tier]+' · '+t.name:'Accessory'}</div><h2 style="margin-top:4px">${n.name}</h2></div>
+    <div class="chip" style="align-self:flex-start;color:${st==='done'?'var(--good)':st==='current'?'var(--accent)':'var(--muted)'}">${{done:'Mastered',current:'Unlocked',bar:'Locked: needs pull-up bar',locked:'Locked'}[st]}</div>
+    <div class="card"><div class="eyebrow">Mastery goal</div><div class="num" style="font-size:26px">3 sets × ${n.hi}${u(n)||' reps'}</div>
+      <div class="small muted">Current target ${S.presc[n.id]??n.lo}${u(n)} · best ${S.best[n.id]??'–'}${S.best[n.id]?u(n):''}</div></div>
+    ${req.length?`<div class="stack" style="gap:6px"><div class="eyebrow">To unlock</div>${req.map(([l,ok])=>`<div class="row small"><span style="color:${ok?'var(--good)':'var(--bad)'}">${ok?'✓':'✕'}</span>${l}</div>`).join('')}</div>`:''}
+    ${nxt?`<div class="small muted">Unlocks next: <b style="color:var(--text)">${nxt.name}</b></div>`:''}
+    <div class="stack" style="gap:6px"><div class="eyebrow">Form cue</div><div>${n.cue}</div></div>
+    <a class="btn ghost" style="text-decoration:none" target="_blank" href="https://www.youtube.com/results?search_query=${encodeURIComponent(n.name+' calisthenics tutorial')}">Watch demo ↗</a>`;
+}
+
+// ---------- Progress (sample history) ----------
+function renderProgress(){
+  // 8 weeks, Mon..Sun; s=strength done, y=yoga done, x=missed, r=rest, f=future
+  const weeks=['sysysyr','sysysxr','sysyxyr','xysysyr','sysysyr','sxsysyr','sysysyr','fffffff'];
+  const colr={s:'var(--accent)',y:'var(--steel)',x:'transparent',r:'var(--card-2)',f:'transparent'};
+  const heat=weeks.map(w=>[...w].map(c=>`<i title="${{s:'Strength',y:'Yoga',x:'Missed',r:'Rest',f:''}[c]}" style="aspect-ratio:1;border-radius:5px;background:${colr[c]};border:1px ${c==='x'?'dashed var(--bad)':c==='f'?'dashed var(--line)':'solid transparent'}"></i>`).join('')).join('');
+  // push-up track history: knee push-ups, then full push-ups
+  const pts=[10,11,12,13,14,15,4,5,5,5,6,6,6,7,7,7], W=320,H=140,P=24, x=i=>P+i*(W-2*P)/(pts.length-1), y=v=>H-P-v/16*(H-2*P);
+  const line=(a,b,c)=>`<polyline fill="none" stroke="${c}" stroke-width="2.5" points="${pts.slice(a,b).map((v,i)=>x(a+i)+','+y(v)).join(' ')}"/>`;
+  const prs=[['Push-ups','pushup','reps'],['Knee push-ups','knee_pu','reps'],['Plank','plank','s'],['Hollow hold','hollow_hold','s'],['Goblet squat','goblet_squat','reps'],['Pike push-ups','pike_pu','reps'],['Planche lean','pl_lean','s']];
+  const miles=[['First workout logged',1],['60-second plank',1],['5 clean push-ups',1],['10 push-ups in one set',Math.min(1,S.best.pushup/10)],['60-second hollow hold',Math.min(1,S.best.hollow_hold/60)],['First 10 s crow',0],['First pull-up',S.bar?0:null]];
+  return `<div class="eyebrow">Progress</div><h1 style="margin-top:4px">7 weeks in</h1>
+    <div class="row" style="gap:10px;margin-top:14px">${[['16','workouts'],['6','week streak'],['89%','plan done']].map(([v,l])=>`<div class="card" style="flex:1;text-align:center;padding:12px"><div class="num" style="font-size:30px">${v}</div><div class="small muted">${l}</div></div>`).join('')}</div>
+    <div class="section"><div class="row between"><div class="eyebrow">Consistency</div><div class="row small muted" style="gap:8px"><span style="color:var(--accent)">■</span>Strength<span style="color:var(--steel)">■</span>Yoga<span style="color:var(--bad)">▢</span>Missed</div></div>
+      <div class="card"><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">${'MTWTFSS'.split('').map(d=>`<span class="small muted" style="text-align:center">${d}</span>`).join('')}${heat}</div></div></div>
+    <div class="section"><div class="eyebrow">Push track · best set per session</div><div class="card">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+        ${[0,5,10,15].map(v=>`<line x1="${P}" x2="${W-P}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="4" y="${y(v)+4}" font-size="10" fill="var(--muted)">${v}</text>`).join('')}
+        ${line(0,6,'var(--steel)')}${line(6,16,'var(--accent)')}
+        <line x1="${x(5.5)}" x2="${x(5.5)}" y1="${P-8}" y2="${H-P}" stroke="var(--muted)" stroke-dasharray="3 3"/>
+        <text x="${x(5.5)+4}" y="${P-10}" font-size="10" fill="var(--muted)">Levelled up</text>
+        <circle cx="${x(15)}" cy="${y(7)}" r="4" fill="var(--accent)"/></svg>
+      <div class="row small muted" style="gap:8px"><span style="color:var(--steel)">━</span>Knee push-up <span style="color:var(--accent)">━</span>Push-up</div></div></div>
+    <div class="section"><div class="eyebrow">Personal records</div><div class="card list" style="padding-block:4px">${prs.map(([l,id,un])=>`<div class="item"><span style="flex:1">${l}</span><span class="num" style="font-size:22px">${S.best[id]} <span class="small muted">${un}</span></span></div>`).join('')}</div></div>
+    <div class="section"><div class="eyebrow">Milestones</div><div class="card list" style="padding-block:4px">${miles.map(([l,p])=>`<div class="item"><span class="check ${p===1?'on':''}" style="${p===1?'background:var(--good);border-color:var(--good)':''}">${p===1?'✓':p===null?'🔒':''}</span>
+      <div style="flex:1"><div style="${p===1?'':'color:var(--muted)'}">${l}</div>${p>0&&p<1?`<div class="bar" style="margin-top:6px"><i style="width:${p*100}%"></i></div>`:''}${p===null?'<div class="small muted">Needs a pull-up bar</div>':''}</div></div>`).join('')}</div></div>`;
+}
+
+// ---------- You ----------
+function renderYou(){
+  const eq=[['Yoga mat',1],['Yoga bricks',1],['Yoga belt',1],['Push-up handles',1],['Dumbbell',1],['Grip trainer',1]];
+  return `<div class="eyebrow">You</div><h1 style="margin-top:4px">Beginner</h1><div class="small muted">Started 17 Aug 2026 · Mon / Wed / Fri strength</div>
+    <div class="section"><div class="eyebrow">Equipment</div><div class="card list" style="padding-block:4px">
+      <button class="item" data-a="bar" style="text-align:left"><span class="check ${S.bar?'on':''}">${S.bar?'✓':''}</span><div style="flex:1"><b>Pull-up bar</b><div class="small muted">Unlocks dead hang, pull-ups, muscle-up</div></div></button>
+      ${eq.map(([l])=>`<div class="item"><span class="check on">✓</span>${l}</div>`).join('')}</div></div>
+    <div class="section"><div class="eyebrow">Progression rules</div><div class="card stack">
+      <label class="stack" style="gap:4px"><span class="row between"><span>Max effort to progress</span><b id="rv-maxRpe">${S.rules.maxRpe}/10</b></span><input id="r-maxRpe" data-rule="maxRpe" type="range" min="7" max="9" value="${S.rules.maxRpe}"></label>
+      <label class="stack" style="gap:4px"><span class="row between"><span>Ease off below</span><b id="rv-failPct">${S.rules.failPct}%</b></span><input id="r-failPct" data-rule="failPct" type="range" min="60" max="90" step="5" value="${S.rules.failPct}"></label>
+      <div class="small muted">Hit every set at or under the max effort → target goes up. Hit the top of the range → next variation. Fall below the floor → target goes down.</div></div></div>
+    <div class="section"><div class="eyebrow">Data</div><button class="btn ghost" data-a="export">Export backup</button><button class="btn ghost" data-a="theme">Switch light / dark</button></div>`;
+}
+
+// ---------- rendering + actions ----------
+const TABS=[['today','Today','<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>'],['skills','Skills','<circle cx="12" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M12 7.5v4l-6 5M12 11.5l6 5"/>'],['progress','Progress','<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>'],['you','You','<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>']];
+function draw(){
+  $('#tabs').innerHTML=TABS.map(([id,l,p])=>`<button data-a="tab" data-v="${id}" aria-current="${S.tab===id}"><svg viewBox="0 0 24 24">${p}</svg>${l}</button>`).join('');
+  $('#screen').innerHTML={today:renderToday,skills:renderSkills,progress:renderProgress,you:renderYou}[S.tab]();
+  const w=S.workout;
+  $('#layer').innerHTML=w?(w.summary?renderSummary():renderWorkout()):S.sheet?`<div class="sheet-bg" data-a="close"><div class="sheet">${S.sheet()}</div></div>`:'';
+}
+const A={
+  tab:v=>{S.tab=v;$('#screen').scrollTop=0},
+  day:v=>S.day=+v,
+  check:v=>S.checks[S.day+v]=!S.checks[S.day+v],
+  checkin:()=>S.sheet=checkinSheet,
+  ci:v=>{const [k,x]=v.split(':'); if(k==='pain') S.ci.pain=!S.ci.pain; else S.ci[k]=+x},
+  'ci-save':()=>{S.readiness={score:readinessScore(S.ci),pain:S.ci.pain};S.sheet=null},
+  node:v=>S.sheet=()=>nodeSheet(v),
+  close:()=>S.sheet=null,
+  track:v=>S.track=v,
+  bar:()=>{S.bar=!S.bar;toast(S.bar?'Pull-up bar added. Bar skills are now unlockable.':'Pull-up bar removed.')},
+  theme:()=>{const r=document.documentElement,dark=getComputedStyle(r).colorScheme==='dark';r.dataset.theme=dark?'light':'dark'},
+  export:()=>{const data=JSON.stringify({mastered:[...S.mastered],presc:S.presc,best:S.best,rules:S.rules},null,1);
+    S.sheet=()=>`<h2>Backup</h2><div class="small muted">In the real app this saves a file to iCloud Drive / Files. Preview:</div><pre style="font-size:11px;background:var(--card-2);padding:10px;border-radius:10px;overflow-x:auto;max-height:260px">${data}</pre>`},
+  start:startWorkout,
+  quit:()=>S.workout=null,
+  finish:finish,
+  val:v=>{const w=S.workout,ex=w.items[w.i].ex;w.val=Math.max(0,w.val+(+v)*(ex.hold?5:1))},
+  rpe:v=>S.workout.rpe=+v,
+  set:()=>{if(S.workout.hold) A.hold(); completeSet(); return 1},
+  hold:()=>{const w=S.workout; if(w.hold){w.val=Math.floor((Date.now()-w.hold)/1000);w.hold=null}else w.hold=Date.now()},
+  'rest-add':()=>S.workout.rest+=15000,
+  'rest-skip':()=>S.workout.rest=null,
+  skip:()=>{nextExercise();return 1},
+  pain:()=>{const w=S.workout;w.pain[w.i]=true;toast('Noted. Stop this exercise. Cal-X can\'t diagnose pain. If it\'s sharp or lasts, see a professional.');nextExercise();return 1},
+  save:saveWorkout,
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]'); if(!t) return;
+  if(t.dataset.a==='close'&&e.target!==t) return;
+  if(!A[t.dataset.a](t.dataset.v)) draw()});
+document.addEventListener('input',e=>{const k=e.target.dataset.rule; if(!k) return; S.rules[k]=+e.target.value; $('#rv-'+k).textContent=k==='maxRpe'?e.target.value+'/10':e.target.value+'%'});
+setInterval(tick,250);
+draw();
+</script>

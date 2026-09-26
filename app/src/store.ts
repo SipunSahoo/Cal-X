@@ -1,0 +1,50 @@
+import { useSyncExternalStore } from 'react'
+import { DEFAULT_RULES, dayKey, type State } from './engine/progression'
+
+const KEY = 'calx-state-v1'
+
+const fresh = (): State => ({
+  version: 1, onboarded: false, startDate: dayKey(), equipment: ['mat', 'bricks', 'belt', 'handles', 'dumbbell', 'gripper'],
+  mastered: [], targets: {}, sessions: [], checks: {}, readiness: {}, rules: { ...DEFAULT_RULES },
+})
+
+function load(): State {
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw) return { ...fresh(), ...JSON.parse(raw) }
+  } catch { /* fall through to a fresh state */ }
+  return fresh()
+}
+
+let state = load()
+const listeners = new Set<() => void>()
+
+export function setState(fn: (s: State) => State) {
+  state = fn(state)
+  try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* storage full or blocked */ }
+  listeners.forEach(l => l())
+}
+
+export function useStore(): State {
+  return useSyncExternalStore(cb => { listeners.add(cb); return () => listeners.delete(cb) }, () => state)
+}
+
+// Ask the browser not to evict our data (matters on iOS).
+navigator.storage?.persist?.().catch(() => {})
+
+export function exportBackup() {
+  const blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `calx-backup-${dayKey()}.json`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+export async function importBackup(file: File) {
+  const data = JSON.parse(await file.text())
+  if (data?.version !== 1 || !Array.isArray(data.sessions)) throw new Error('This file is not a Cal-X backup.')
+  setState(() => ({ ...fresh(), ...data }))
+}
+
+export function resetAll() { setState(fresh) }
