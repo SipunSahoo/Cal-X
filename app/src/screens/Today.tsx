@@ -6,6 +6,7 @@ import { setState, useStore } from '../store'
 import { CheckRow, Choice, Sheet } from '../ui'
 import { NodeSheet } from './Skills'
 import Plan from './Plan'
+import { BodyPrompt } from './Body'
 
 export default function Today({ onStart, onBreathe }: { onStart: () => void; onBreathe: () => void }) {
   const s = useStore()
@@ -65,6 +66,8 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
           )
         })}
       </nav>
+
+      {isToday && <BodyPrompt />}
 
       {isToday && plan.kind === 'strength' && !doneSession && (
         <button className="tile row" style={{ marginTop: 14, width: '100%' }} onClick={() => setSheet('checkin')}>

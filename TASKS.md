@@ -78,6 +78,7 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [x] Breathing module: custom 4-phase patterns (inhale · hold · exhale · hold), sequences mixing patterns + pauses, animated fill circle, sound + haptic cue on every phase change, auto-ticks morning/night sadhana
 - [x] Push reminders: editable times/days per task (defaults from the blueprint), Cloudflare Worker cron sends Web Push (worker/), deployed by the Pages workflow
 - [x] Weekly plan screen (Today → "Week N plan"): week, morning/evening flow, strength-day blocks, progression rules
+- [x] Body tracking: height, goal (lose / gain / maintain / recomp), optional target, weigh-ins + waist, trend chart, weekly pace vs healthy range, BMI; onboarding step, Today prompt, Sunday weigh-in reminder
 - [ ] Meditation timer (Dhyana), run logging
 - [ ] AI weekly coach (optional)
 

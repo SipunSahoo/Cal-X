@@ -2,17 +2,26 @@ import { useState } from 'react'
 import { EQUIPMENT, TIERS, TRACKS, type Equipment } from '../data/catalog'
 import { dayKey, placement, trainingNode, type Assessment } from '../engine/progression'
 import { setState, useStore } from '../store'
-import { CheckRow, Choice } from '../ui'
+import { CheckRow, Choice, Stepper as NumStepper } from '../ui'
+import { GoalPicker } from './Body'
+import type { Goal } from '../data/body'
 
 export default function Onboarding() {
   const s = useStore()
   const [step, setStep] = useState(0)
   const [gear, setGear] = useState<Equipment[]>(s.equipment)
   const [a, setA] = useState<Assessment>({ pushups: 5, plankSec: 45, squats: 20, pike: false })
+  const [height, setHeight] = useState(s.body.height ?? 170)
+  const [kg, setKg] = useState(s.body.weights.at(-1)?.kg ?? 70)
+  const [goal, setGoal] = useState<Goal | undefined>(s.body.goal)
   const mastered = placement(a)
   const preview = { ...s, equipment: gear, mastered }
 
-  const finish = () => setState(x => ({ ...x, onboarded: true, startDate: dayKey(), equipment: gear, mastered, targets: {} }))
+  const finish = () => setState(x => {
+    const date = dayKey()
+    const weights = [...x.body.weights.filter(w => w.date !== date), { date, kg }].sort((p, q) => p.date.localeCompare(q.date))
+    return { ...x, onboarded: true, startDate: x.sessions.length ? x.startDate : date, equipment: gear, mastered, targets: {}, body: { ...x.body, height, goal: goal ?? x.body.goal, weights } }
+  })
   const Stepper = ({ k, label, step: d = 1 }: { k: 'pushups' | 'squats'; label: string; step?: number }) => (
     <div className="card row between">
       <span>{label}</span>
@@ -31,7 +40,7 @@ export default function Onboarding() {
       <p className="muted">A 1-minute setup finds your starting point. After that the app plans every session, adjusts targets from how you actually perform, and unlocks harder skills when you've earned them.</p>
     </>,
     <>
-      <div className="eyebrow">Step 1 of 3</div><h1>What equipment do you have?</h1>
+      <div className="eyebrow">Step 1 of 4</div><h1>What equipment do you have?</h1>
       <div className="card list">
         {(Object.keys(EQUIPMENT) as Equipment[]).map(k => (
           <CheckRow key={k} on={gear.includes(k)} title={EQUIPMENT[k]} sub={k === 'bar' ? 'Unlocks dead hang, pull-ups and muscle-ups' : undefined}
@@ -40,7 +49,15 @@ export default function Onboarding() {
       </div>
     </>,
     <>
-      <div className="eyebrow">Step 2 of 3</div><h1>Quick assessment</h1>
+      <div className="eyebrow">Step 2 of 4</div><h1>Your body & goal</h1>
+      <p className="muted small">Used to track your weight trend and give pace advice. It stays on your phone.</p>
+      <div className="card row between"><span>Height (cm)</span><NumStepper value={height} min={120} max={220} onChange={setHeight} /></div>
+      <div className="card row between"><span>Weight (kg)</span><NumStepper value={kg} min={30} max={250} onChange={setKg} /></div>
+      <div className="eyebrow">Your goal</div>
+      <GoalPicker goal={goal} onPick={setGoal} />
+    </>,
+    <>
+      <div className="eyebrow">Step 3 of 4</div><h1>Quick assessment</h1>
       <p className="muted small">Be honest. Clean reps only. You can always move up quickly.</p>
       <Stepper k="pushups" label="Push-ups in one set" />
       <Stepper k="squats" label="Bodyweight squats in one set" step={5} />
@@ -50,7 +67,7 @@ export default function Onboarding() {
         <Choice options={[['no', 'Not yet'], ['yes', 'Yes']]} value={a.pike ? 'yes' : 'no'} onChange={v => setA({ ...a, pike: v === 'yes' })} /></div>
     </>,
     <>
-      <div className="eyebrow">Step 3 of 3</div><h1>Your starting point</h1>
+      <div className="eyebrow">Step 4 of 4</div><h1>Your starting point</h1>
       <p className="muted small">You train Mon / Wed / Fri, with yoga Tue / Thu / Sat from your blueprint.</p>
       <div className="card list">
         {TRACKS.map(t => { const n = trainingNode(preview, t); return (

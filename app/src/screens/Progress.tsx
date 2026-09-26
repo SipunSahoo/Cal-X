@@ -3,6 +3,7 @@ import { EX, TRACKS, WEEK } from '../data/catalog'
 import { addDays, bests, dayKey, parseDay, unit, weekStreak } from '../engine/progression'
 import { useStore } from '../store'
 import { Icon, exIcon } from '../icons'
+import { BodySection } from './Body'
 
 const WEEKS = 10
 
@@ -18,6 +19,7 @@ export default function Progress() {
     <>
       <div className="tag">Progress</div><h1 style={{ marginTop: 4 }}>Your story starts here</h1>
       <div className="tile row" style={{ marginTop: 16 }}><span className="ico muted"><Icon name="progress" /></span><p className="muted grow" style={{ margin: 0 }}>Finish your first workout and this page fills with records, charts and your consistency calendar.</p></div>
+      <BodySection />
     </>
   )
 
@@ -62,7 +64,10 @@ export default function Progress() {
     <>
       <div className="eyebrow">Since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</div>
       <h1 style={{ marginTop: 2 }}>Progress</h1>
-      <div className="grid3" style={{ marginTop: 16 }}>
+      <BodySection />
+
+      <div className="section-head" style={{ marginTop: 26 }}><h2>Training</h2></div>
+      <div className="grid3" style={{ marginTop: 10 }}>
         {([['dumbbell', s.sessions.length, 'workouts'], ['flame', weekStreak(s), 'week streak'], ['calendar', `${thisWeek}/3`, 'this week']] as const).map(([ic, v, l]) => (
           <div key={l} className="tile"><span className="ico sm"><Icon name={ic} size={18} /></span><span><div className="n">{v}</div><div className="d">{l}</div></span></div>
         ))}

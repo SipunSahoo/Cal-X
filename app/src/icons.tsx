@@ -27,6 +27,8 @@ const P: Record<string, ReactNode> = {
   breath: <><circle cx="12" cy="12" r="8.5" /><path d="M3.5 13.5c2.8-1.5 5.7-1.5 8.5 0s5.7 1.5 8.5 0" /></>,
   pause: <path d="M9 6v12M15 6v12" />,
   // ui
+  scale: <><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><path d="M8 9a5.5 5.5 0 0 1 8 0M12 9.5l1.5-2" /></>,
+  ruler: <path d="M3 16 16 3l5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2" />,
   bell: <path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4" />,
   info: <><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5.5M12 7.8v.2" /></>,
   play: <path d="M8 5.5v13l10.5-6.5z" />,
