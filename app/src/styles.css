@@ -36,8 +36,6 @@ a { color: inherit }
 
 /* app shell: the page scrolls inside <main>, the tab bar is a normal row → it never jumps */
 .shell { position: fixed; inset: 0; display: flex; flex-direction: column } /* fixed to the real screen edges (iOS home-screen apps mis-size 100% height) */
-/* iOS home-screen apps with a translucent status bar report a viewport that is short by the status-bar height */
-@media (display-mode: standalone) { .shell { bottom: auto; height: calc(100% + env(safe-area-inset-top, 0px)) } }
 .screen { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 28px }
 .screen > * { max-width: 520px; margin-inline: auto }
@@ -46,7 +44,7 @@ a { color: inherit }
 .full > * { max-width: 520px; margin-inline: auto; width: 100% }
 
 .tabs { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  --tabs-pad: max(6px, calc(env(safe-area-inset-bottom, 0px) - 16px)); /* sit just above the home indicator */
+  --tabs-pad: 6px; /* iOS already keeps the home-indicator strip out of the page, so no extra inset */
   height: calc(var(--tabs-h) + var(--tabs-pad)); padding-bottom: var(--tabs-pad);
   background: var(--bg); border-top: 1px solid var(--line) }
 .tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 500; color: var(--muted) }
