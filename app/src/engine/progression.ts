@@ -5,7 +5,11 @@ import type { Body } from '../data/body'
 
 // ---------- stored state ----------
 export interface SetLog { value: number; rpe: number }
-export interface ExerciseLog { id: string; planned: number; target: number; sets: SetLog[]; pain?: boolean }
+export interface ExerciseLog {
+  id: string; planned: number; target: number; sets: SetLog[]; pain?: boolean
+  quick?: boolean // ticked on Today instead of the workout player
+  unlocked?: boolean // this log mastered the exercise (undone if unticked)
+}
 export interface Session { id: string; date: string; minutes: number; items: ExerciseLog[] }
 export interface Readiness { sleep: number; energy: number; sore: number; pain: boolean; score: number }
 export interface Rules { maxRpe: number; failPct: number; lightBelow: number }

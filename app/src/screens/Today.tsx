@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { CHECKS, EX, TIERS, TRACKS, WEEK } from '../data/catalog'
-import { addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit } from '../engine/progression'
+import { addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit, type Decision, type ExerciseLog, type Planned } from '../engine/progression'
+import { logExercise, undoLog } from '../engine/log'
 import { CHECK_ICON, Icon, exIcon } from '../icons'
 import { setState, useStore } from '../store'
-import { CheckRow, Choice, Sheet } from '../ui'
+import { CheckRow, Choice, Sheet, Stepper, toast } from '../ui'
 import { NodeSheet } from './Skills'
 import Plan from './Plan'
 import Manual from './Manual'
@@ -17,6 +18,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const [sheet, setSheet] = useState<null | 'checkin' | string>(null)
   const [showPlan, setShowPlan] = useState(false)
   const [showManual, setShowManual] = useState(false)
+  const [edit, setEdit] = useState<{ p: Planned; it: ExerciseLog } | null>(null)
   const selDate = parseDay(sel), plan = WEEK[selDate.getDay()], isToday = sel === todayKey
   const week = Math.max(1, Math.floor((now.getTime() - parseDay(s.startDate).getTime()) / 6048e5) + 1)
   const r = s.readiness[todayKey]
@@ -38,9 +40,21 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
     )
   })
 
-  const tiles = doneSession
-    ? doneSession.items.map(it => ({ id: it.id, big: it.sets.length ? it.sets.map(x => x.value).join('·') : '–', sub: it.sets.length ? 'logged' : 'skipped' }))
-    : ses.map(p => { const last = lastSets(s, p.ex.id); return { id: p.ex.id, big: `${p.sets}×${p.target}${unit(p.ex)}`, sub: last ? `last ${last.join('·')}` : TIERS[p.ex.tier] } })
+  // each row = a planned exercise and, if logged that day, its log (a level-up today still shows the exercise you did)
+  const logged = (doneSession?.items ?? []).filter(it => it.sets.length)
+  const rows: Row[] = isToday || !doneSession
+    ? ses.map(p => {
+        const it = logged.find(l => l.id === p.ex.id || (p.ex.track && EX[l.id]?.track === p.ex.track))
+        return it ? { p: { ex: EX[it.id], sets: it.planned, target: it.target }, it } : { p }
+      })
+    : doneSession.items.map(it => ({ p: { ex: EX[it.id], sets: it.planned, target: it.target }, it: it.sets.length ? it : undefined }))
+  const doneCount = rows.filter(x => x.it).length, allDone = rows.length > 0 && doneCount === rows.length
+
+  const tick = (p: Planned) => {
+    let d: Decision | undefined
+    setState(x => { const r = logExercise(x, todayKey, p, Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })), true); d = r.decision; return r.state })
+    if (d) toast(d.advanceTo ? `Mastered! Next time: ${d.advanceTo.name}` : d.tag === 'Increase' ? `Done. Next target ${d.next}${unit(p.ex)}` : 'Done.')
+  }
 
   return (
     <>
@@ -71,7 +85,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
 
       {isToday && <BodyPrompt />}
 
-      {isToday && plan.kind === 'strength' && !doneSession && (
+      {isToday && plan.kind === 'strength' && doneCount === 0 && (
         <button className="tile row" style={{ marginTop: 14, width: '100%' }} onClick={() => setSheet('checkin')}>
           <span className={`ico ${r ? (r.score >= 70 ? 'good' : '') : 'muted'}`}><Icon name="bolt" /></span>
           {r ? <span className="grow"><span className="t">Readiness <span className="num" style={{ fontSize: 16, color: r.score >= 70 ? 'var(--good)' : r.score >= s.rules.lightBelow ? 'var(--warn)' : 'var(--bad)' }}>{r.score}</span></span>
@@ -85,20 +99,30 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
           <div className="tile hero">
             <div className="row">
               <span className="ico"><Icon name="dumbbell" /></span>
-              <span className="grow"><h2>Full body circuit</h2><div className="d">{tiles.length} exercises · {doneSession ? `${doneSession.minutes} min` : `about ${mins} min`} + warm-up</div></span>
+              <span className="grow"><h2>Full body circuit</h2><div className="d">{doneCount} of {rows.length} done · about {mins} min + warm-up</div></span>
             </div>
-            {doneSession ? <div className="btn ghost" style={{ color: 'var(--good)' }}><Icon name="check" size={18} /> Completed</div>
-              : isToday ? <button className="btn" onClick={onStart}><Icon name="play" size={18} /> Start workout</button>
-              : <div className="d">Preview. Targets update after each session.</div>}
+            <div className="bar"><i style={{ width: `${rows.length ? doneCount / rows.length * 100 : 0}%`, background: 'var(--good)' }} /></div>
+            {allDone ? <div className="btn ghost" style={{ color: 'var(--good)' }}><Icon name="check" size={18} /> Completed</div>
+              : isToday ? <><button className="btn" onClick={onStart}><Icon name="play" size={18} /> {doneCount ? `Continue guided workout (${rows.length - doneCount} left)` : 'Start guided workout'}</button>
+                  <div className="d" style={{ textAlign: 'center' }}>Or train your own way and tap each exercise when it's done.</div></>
+              : <div className="d">{doneSession ? 'Logged on this day.' : 'Preview. Targets update after each session.'}</div>}
           </div>
           <div className="grid2">
-            {tiles.map(({ id, big, sub }) => {
-              const ex = EX[id]
+            {rows.map(({ p, it }) => {
+              const ex = p.ex, last = lastSets(s, ex.id)
+              const open = () => !isToday ? setSheet(ex.id) : it ? setEdit({ p, it }) : tick(p)
               return (
-                <button key={id} className="tile" onClick={() => setSheet(id)}>
-                  <span className="row between"><span className="ico sm"><Icon name={ex ? exIcon(ex) : 'target'} size={18} /></span><span className="n" style={{ fontSize: 18 }}>{big}</span></span>
-                  <span><div className="t">{ex?.name ?? id}</div><div className="d">{sub}</div></span>
-                </button>
+                <div key={ex.id} className={`tile ${it ? 'on' : ''}`} role="button" tabIndex={0} aria-pressed={!!it}
+                  onClick={open} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }} style={{ cursor: 'pointer' }}>
+                  <span className="row between">
+                    <span className={`ico sm ${it ? 'good' : ''}`}><Icon name={it ? 'check' : exIcon(ex)} size={18} /></span>
+                    <span className="n" style={{ fontSize: 18, color: it ? 'var(--good)' : undefined }}>{it ? it.sets.map(x => x.value).join('·') : `${p.sets}×${p.target}${unit(ex)}`}</span>
+                  </span>
+                  <span><div className="t">{ex.name}</div>
+                    <div className="d">{it ? (isToday ? (it.quick ? 'Done as planned · tap to edit' : 'Logged · tap to edit') : 'Logged') : isToday ? (last ? `Tap when done · last ${last.join('·')}` : 'Tap when done') : TIERS[ex.tier]}</div></span>
+                  <button className="chip" style={{ alignSelf: 'flex-end', minHeight: 26, padding: '2px 10px', fontSize: 12 }} onClick={e => { e.stopPropagation(); setSheet(ex.id) }}>
+                    <Icon name="info" size={13} /> How to</button>
+                </div>
               )
             })}
           </div>
@@ -155,6 +179,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
 
       {showPlan && <Plan onClose={() => setShowPlan(false)} />}
       {showManual && <Manual onClose={() => setShowManual(false)} />}
+      {edit && <LogEdit row={edit} date={todayKey} onClose={() => setEdit(null)} />}
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}
     </>
@@ -173,6 +198,38 @@ function CheckIn({ onClose }: { onClose: () => void }) {
       <div className="stack"><div className="eyebrow">Muscle soreness</div><Choice options={[[0, 'None'], [1, 'Light'], [2, 'Moderate'], [3, 'High'], [4, 'Severe']]} value={c.sore} onChange={v => setC({ ...c, sore: v })} /></div>
       <CheckRow on={c.pain} tone="good" onToggle={() => setC({ ...c, pain: !c.pain })} title="Any sharp or joint pain?" sub="Cal-X can't diagnose pain. If it's sharp or lasting, see a physio or doctor." />
       <button className="btn" onClick={save}>Save</button>
+    </Sheet>
+  )
+}
+
+type Row = { p: Planned; it?: ExerciseLog }
+
+/** Edit what you actually did for a ticked exercise, or unmark it. */
+function LogEdit({ row, date, onClose }: { row: { p: Planned; it: ExerciseLog }; date: string; onClose: () => void }) {
+  const { p, it } = row, U = unit(p.ex)
+  const [vals, setVals] = useState(it.sets.map(x => x.value))
+  const [rpe, setRpe] = useState(Math.max(...it.sets.map(x => x.rpe)))
+  const save = () => {
+    let d: Decision | undefined
+    setState(x => { const r = logExercise(x, date, p, vals.map(value => ({ value, rpe })), false); d = r.decision; return r.state })
+    if (d) toast(`Saved. ${d.tag}: next target ${d.next}${U}`)
+    onClose()
+  }
+  return (
+    <Sheet onClose={onClose}>
+      <div className="row between"><button className="chip" onClick={onClose}>Cancel</button><span className="t">{p.ex.name}</span>
+        <button className="chip" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'var(--accent)', fontWeight: 700 }} onClick={save}>Save</button></div>
+      <div className="d">Target was {p.sets} × {p.target}{U || ' reps'}. Enter what you actually did so the next target is right.</div>
+      <div className="card list">
+        {vals.map((v, k) => (
+          <div key={k} className="item"><span className="grow">Set {k + 1}</span>
+            <Stepper value={v} min={0} max={500} step={p.ex.hold ? 5 : 1} suffix={U} onChange={n => setVals(vals.map((x, j) => j === k ? n : x))} /></div>
+        ))}
+      </div>
+      <div className="stack" style={{ gap: 8 }}><div className="eyebrow">How hard was it? (effort out of 10)</div>
+        <Choice options={[[6, '6 Easy'], [7, '7 Solid'], [8, '8 Hard'], [9, '9 Grind'], [10, '10 Max']]} value={rpe} onChange={setRpe} /></div>
+      <button className="btn ghost" style={{ color: 'var(--bad)' }} onClick={() => { setState(x => undoLog(x, date, p.ex.id)); toast('Unmarked.'); onClose() }}>
+        <Icon name="close" size={18} /> Unmark as not done</button>
     </Sheet>
   )
 }

@@ -4,6 +4,7 @@ import { bests, buildSession, dayKey, evaluate, lastSets, unit, type Decision, t
 import { setState, useStore } from '../store'
 import { Sheet, toast } from '../ui'
 import { GuideBody } from './Manual'
+import { mergeIntoDay } from '../engine/log'
 
 const RPE: [number, string][] = [[6, 'Easy'], [7, 'Solid'], [8, 'Hard'], [9, 'Grind'], [10, 'Max']]
 const restFor = (p: Planned) => (p.ex.track ? 90 : 60) * 1000
@@ -20,7 +21,8 @@ function beep() {
 
 export default function Workout({ onClose }: { onClose: () => void }) {
   const s = useStore()
-  const [items] = useState(() => buildSession(s, s.readiness[dayKey()]))
+  // exercises already ticked on Today are skipped, so the workout continues where you left off
+  const [items] = useState(() => { const done = s.sessions.find(x => x.date === dayKey())?.items.filter(it => it.sets.length).map(it => it.id) ?? []; return buildSession(s, s.readiness[dayKey()]).filter(p => !done.includes(p.ex.id)) })
   const [i, setI] = useState(0)
   const [logs, setLogs] = useState<SetLog[][]>(() => items.map(() => []))
   const [pain, setPain] = useState<Record<number, boolean>>({})
@@ -163,16 +165,13 @@ function Summary({ minutes, results, onDone }: { minutes: number; results: { p: 
   const prs = results.filter(r => r.sets.length && Math.max(...r.sets.map(x => x.value)) > (before[r.p.ex.id]?.value ?? 0))
   const save = () => {
     setState(x => {
-      const targets = { ...x.targets }, mastered = [...x.mastered]
+      const targets = { ...x.targets }, mastered = [...x.mastered], unlocked = new Set<string>()
       for (const r of results) {
         targets[r.p.ex.id] = r.d.next
-        if (r.d.tag === 'Level up' && !mastered.includes(r.p.ex.id)) mastered.push(r.p.ex.id)
+        if (r.d.tag === 'Level up' && !mastered.includes(r.p.ex.id)) { mastered.push(r.p.ex.id); unlocked.add(r.p.ex.id) }
       }
-      const date = dayKey()
-      return { ...x, targets, mastered, sessions: [...x.sessions, {
-        id: `${date}-${Date.now()}`, date, minutes,
-        items: results.map(r => ({ id: r.p.ex.id, planned: r.p.sets, target: r.p.target, sets: r.sets, pain: r.pain || undefined })),
-      }] }
+      const items = results.map(r => ({ id: r.p.ex.id, planned: r.p.sets, target: r.p.target, sets: r.sets, pain: r.pain || undefined, unlocked: unlocked.has(r.p.ex.id) || undefined }))
+      return { ...x, targets, mastered, sessions: mergeIntoDay(x.sessions, dayKey(), items, minutes) }
     })
     const ups = results.filter(r => r.d.advanceTo).map(r => r.d.advanceTo!.name)
     toast(ups.length ? `Unlocked: ${ups.join(', ')}` : 'Workout saved.')
