@@ -94,13 +94,13 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done
 ## Phase 8 — Gym mode (G1–G5 built; G6–G7 open)
 Goal: people who train in a gym get the same coaching loop (plan → log → auto-progress → unlocks → progress), with weights instead of bodyweight skills. Breathing, yoga check-offs, body tracking, reminders and backup stay shared.
 
-- [x] **G1 · Setup:** onboarding asks training style (Calisthenics / Gym / Mixed) and gym access; a 1-minute strength check (e.g. "a weight you can lift 10 times") sets starting loads
-- [x] **G2 · Lift catalogue:** 6 movement tracks, each from machine/dumbbell to barbell: Squat (leg press → goblet → back squat), Hinge (RDL → deadlift), Horizontal push (DB press → bench), Vertical push (DB press → OHP), Horizontal pull (cable/DB row → barbell row), Vertical pull (lat pulldown → assisted → pull-up); plus arms, calves, core
-- [x] **G3 · Programs:** beginner full body 3×/week (fits Mon/Wed/Fri), then upper/lower 4×/week, later push/pull/legs; exercise swap for busy machines
-- [x] **G4 · Weight progression rules:** double progression with load (reach top of rep range on all sets → +2.5 kg upper / +5 kg lower); 2 missed sessions → deload 10%; same effort (RPE) and readiness rules as now
-- [x] **G5 · Workout player:** weight field per set (prefilled), auto warm-up sets (empty bar ×10, 50% ×5, 70% ×3), plate calculator, longer rest for big lifts (2–3 min)
+- [x] **G1 · Setup:** onboarding asks training style (Calisthenics / Gym / Mixed) + gym experience (new / some / experienced) → starting lifts and weights (bodyweight-based for experienced); style switch on You tab
+- [x] **G2 · Lift catalogue:** 6 tracks, machine/dumbbell → barbell: Squat (leg press → goblet → back squat), Hinge (DB RDL → BB RDL → deadlift), Bench (DB → barbell), Overhead (DB → barbell), Row (cable → barbell), Pulldown (lat pulldown → pull-up); curls + calf raises
+- [~] **G3 · Programs:** full body 3×/week done. Still open: upper/lower 4×/week, push/pull/legs, exercise swap for busy machines
+- [x] **G4 · Weight progression rules:** fill the rep range at the same weight → add weight (per-lift step) and restart at the bottom of the range; below the effort floor at the bottom of the range → −10%; graduate to the next lift at a set weight
+- [x] **G5 · Workout player:** weight per set (prefilled), warm-up ramp and plates-per-side for barbell lifts, 2.5 min rest on barbell lifts; weight shown on Today tiles and in the edit sheet
 - [ ] **G6 · Strength levels instead of skill unlocks:** standards relative to bodyweight (e.g. bench 0.5× → 0.75× → 1× → 1.25× → 1.5× BW) using the weight already tracked in Body; estimated 1-rep-max charts
-- [ ] **G7 · Manual:** gym basics (bracing, safe bar path, choosing a starting weight, using safety pins / a spotter, gym etiquette) + a how-to for each lift
+- [~] **G7 · Manual:** gym basics cards (choosing a weight, lifting safely) + short track guides done. Still open: full step-by-step how-to per lift
 - [x] **Mixed mode:** calisthenics skills for upper body + gym lifts for legs and back
 
 ## Phase 7 — Yoga module (future)

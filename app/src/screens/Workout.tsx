@@ -7,7 +7,7 @@ import { GuideBody } from './Manual'
 import { mergeIntoDay } from '../engine/log'
 
 const RPE: [number, string][] = [[6, 'Easy'], [7, 'Solid'], [8, 'Hard'], [9, 'Grind'], [10, 'Max']]
-const restFor = (p: Planned) => (p.ex.track ? 90 : 60) * 1000
+const restFor = (p: Planned) => (p.ex.load?.barbell ? 150 : p.ex.track ? 90 : 60) * 1000 // big barbell lifts need longer
 
 let audio: AudioContext | undefined
 function beep() {
