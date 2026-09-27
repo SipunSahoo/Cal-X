@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { EQUIPMENT, TIERS, TRACKS, type Equipment, type Tier } from '../data/catalog'
 import { parseDay, trainingNode, type Rules } from '../engine/progression'
 import { EQUIP_ICON, Icon } from '../icons'
-import { enterDemo, exitDemo, exportBackup, importBackup, resetAll, setState, useStore } from '../store'
+import { enterDemo, exitDemo, resetAll, setState, useStore } from '../store'
+import BackupSection from './Backup'
 import { toast } from '../ui'
 import Reminders from './Reminders'
 
@@ -68,21 +69,7 @@ export default function You() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-head"><h2>Backup</h2><span className="tag">data lives on this phone</span></div>
-        <div className="grid2">
-          <button className="tile" onClick={exportBackup}>
-            <span className="ico sm"><Icon name="download" size={18} /></span><span><div className="t">Export</div><div className="d">Save to Files or iCloud Drive</div></span>
-          </button>
-          <label className="tile" style={{ cursor: 'pointer' }}>
-            <span className="ico sm"><Icon name="upload" size={18} /></span><span><div className="t">Import</div><div className="d">Restore from a backup file</div></span>
-            <input type="file" accept="application/json,.json" hidden onChange={async e => {
-              const f = e.target.files?.[0]; if (!f) return
-              try { await importBackup(f); toast('Backup restored.') } catch (err) { toast((err as Error).message || 'Could not read that file.') }
-            }} />
-          </label>
-        </div>
-      </section>
+      <BackupSection />
 
       <section className="section">
         <div className="section-head"><h2>Appearance</h2></div>

@@ -3,6 +3,7 @@ import { DEFAULT_BREATH } from './data/breathing'
 import { DEFAULT_REMINDERS } from './data/reminders'
 import { DEFAULT_BODY } from './data/body'
 import { DEFAULT_RULES, dayKey, type State } from './engine/progression'
+import { autoBackup } from './engine/cloud'
 
 const KEY = 'calx-state-v1'
 
@@ -26,6 +27,7 @@ const listeners = new Set<() => void>()
 export function setState(fn: (s: State) => State) {
   state = fn(state)
   try { localStorage.setItem(KEY, JSON.stringify(state)) } catch { /* storage full or blocked */ }
+  autoBackup(state) // encrypted cloud copy a few seconds later (skipped in demo mode)
   listeners.forEach(l => l())
 }
 
@@ -52,6 +54,9 @@ export async function importBackup(file: File) {
 }
 
 export function resetAll() { setState(fresh) }
+
+/** Replace everything with restored data (cloud restore). */
+export function loadState(data: State) { setState(() => ({ ...fresh(), ...data, demo: false })) }
 
 // ---- demo mode: park the real data, show sample data, restore on exit ----
 const REAL_KEY = 'calx-real-while-demo'

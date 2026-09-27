@@ -4,6 +4,8 @@ import { dayKey, placement, trainingNode, type Assessment } from '../engine/prog
 import { setState, useStore } from '../store'
 import { CheckRow, Choice, Stepper as NumStepper } from '../ui'
 import { GoalPicker } from './Body'
+import { RestoreSheet } from './Backup'
+import { cloudAvailable } from '../engine/cloud'
 import type { Goal } from '../data/body'
 
 export default function Onboarding() {
@@ -14,6 +16,7 @@ export default function Onboarding() {
   const [height, setHeight] = useState(s.body.height ?? 170)
   const [kg, setKg] = useState(s.body.weights.at(-1)?.kg ?? 70)
   const [goal, setGoal] = useState<Goal | undefined>(s.body.goal)
+  const [restore, setRestore] = useState(false)
   const mastered = placement(a)
   const preview = { ...s, equipment: gear, mastered }
 
@@ -38,6 +41,8 @@ export default function Onboarding() {
       <div className="eyebrow">Cal-X</div>
       <h1 style={{ fontSize: 46 }}>From zero to skills, one set at a time.</h1>
       <p className="muted">A 1-minute setup finds your starting point. After that the app plans every session, adjusts targets from how you actually perform, and unlocks harder skills when you've earned them.</p>
+      {cloudAvailable() && <button className="chip" style={{ alignSelf: 'flex-start' }} onClick={() => setRestore(true)}>Used Cal-X before? Restore from backup code</button>}
+      {restore && <RestoreSheet onClose={() => setRestore(false)} />}
     </>,
     <>
       <div className="eyebrow">Step 1 of 4</div><h1>What equipment do you have?</h1>

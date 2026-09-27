@@ -18,7 +18,8 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
     const path = new URL(req.url).pathname
     if (req.method !== 'POST') return json({ ok: true, service: 'calx-push' })
-    const body = await req.json().catch(() => ({}))
+    // text/plain bodies are accepted too (lets the app send a backup while closing, without a CORS preflight)
+    const body = await req.text().then(t => JSON.parse(t)).catch(() => ({}))
     const subs = await load(env)
 
     if (path === '/sync') {
@@ -32,6 +33,17 @@ export default {
       delete subs[body.endpoint]
       await save(env, subs)
       return json({ ok: true })
+    }
+    // encrypted app backups: the app encrypts before sending, so the server only stores ciphertext
+    if (path === '/backup') {
+      if (!/^[0-9a-f]{64}$/.test(body.id || '') || typeof body.blob !== 'string' || body.blob.length > 2_000_000) return json({ error: 'bad request' }, 400)
+      await env.KV.put('b:' + body.id, JSON.stringify({ blob: body.blob, at: Date.now() }))
+      return json({ ok: true })
+    }
+    if (path === '/restore') {
+      if (!/^[0-9a-f]{64}$/.test(body.id || '')) return json({ error: 'bad request' }, 400)
+      const saved = await env.KV.get('b:' + body.id)
+      return saved ? json(JSON.parse(saved)) : json({ error: 'No backup found for this code.' }, 404)
     }
     if (path === '/test') {
       const s = subs[body.endpoint]
