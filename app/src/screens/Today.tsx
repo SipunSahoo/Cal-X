@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import { CHECKS, EX, TIERS, TRACKS, WEEK } from '../data/catalog'
-import { addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit, type Decision, type ExerciseLog, type Planned } from '../engine/progression'
+import { CHECKS, EX, TIERS, WEEK } from '../data/catalog'
+import { activeTracks, addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit, type Decision, type ExerciseLog, type Planned } from '../engine/progression'
 import { logExercise, undoLog } from '../engine/log'
 import { CHECK_ICON, Icon, exIcon } from '../icons'
 import { setState, useStore } from '../store'
@@ -27,7 +27,8 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const mins = Math.round(ses.reduce((a, p) => a + p.sets * ((p.ex.hold ? p.target : p.target * 3) + (p.ex.track ? 90 : 60)), 0) / 60)
   const checks = s.checks[sel] ?? []
   const toggle = (k: string) => setState(x => ({ ...x, checks: { ...x.checks, [sel]: checks.includes(k) ? checks.filter(c => c !== k) : [...checks, k] } }))
-  const push = trainingNode(s, TRACKS[0]), pushNext = TRACKS[0].nodes[push.index + 1]
+  const firstTrack = activeTracks(s)[0]
+  const push = trainingNode(s, firstTrack), pushNext = firstTrack.nodes[push.index + 1]
 
   const miniTiles = (group: 'session' | 'rhythm') => CHECKS.filter(c => c.group === group && (!c.on || c.on.includes(plan.kind)) && c.key !== 'yoga').map(c => {
     const on = checks.includes(c.key)
@@ -46,9 +47,9 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const rows: Row[] = canLog || !doneSession
     ? ses.map(p => {
         const it = logged.find(l => l.id === p.ex.id || (p.ex.track && EX[l.id]?.track === p.ex.track))
-        return it ? { p: { ex: EX[it.id], sets: it.planned, target: it.target }, it } : { p }
+        return it ? { p: { ex: EX[it.id], sets: it.planned, target: it.target, load: it.kg }, it } : { p }
       })
-    : doneSession.items.map(it => ({ p: { ex: EX[it.id], sets: it.planned, target: it.target }, it: it.sets.length ? it : undefined }))
+    : doneSession.items.map(it => ({ p: { ex: EX[it.id], sets: it.planned, target: it.target, load: it.kg }, it: it.sets.length ? it : undefined }))
   const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 })
   const tapTimer = useRef<number | undefined>(undefined)
   const [ask, setAsk] = useState<Row | null>(null)
@@ -57,8 +58,8 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
 
   const tick = (p: Planned) => {
     let d: Decision | undefined
-    setState(x => { const r = logExercise(x, sel, p, Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })), true); d = r.decision; return r.state })
-    if (d) toast(d.advanceTo ? `Mastered! Next time: ${d.advanceTo.name}` : d.tag === 'Increase' ? `Done. Next target ${d.next}${unit(p.ex)}` : 'Done.')
+    setState(x => { const r = logExercise(x, sel, p, Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8, kg: p.load })), true); d = r.decision; return r.state })
+    if (d) toast(d.advanceTo ? `Mastered! Next time: ${d.advanceTo.name}` : d.tag === 'Increase' ? `Done. Next: ${d.next}${unit(p.ex)}${d.nextLoad ? ` @ ${d.nextLoad} kg` : ''}` : 'Done.')
   }
 
   return (
@@ -132,7 +133,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
                     <span className="n" style={{ fontSize: 18, color: it ? 'var(--good)' : undefined }}>{it ? it.sets.map(x => x.value).join('·') : `${p.sets}×${p.target}${unit(ex)}`}</span>
                   </span>
                   <span><div className="t">{ex.name}</div>
-                    <div className="d">{it ? (it.quick ? 'Done as planned' : 'Logged') + ' · tap to change' : canLog ? `Tap = done · double-tap = enter reps${last ? ` · last ${last.join('·')}` : ''}` : TIERS[ex.tier]}</div></span>
+                    <div className="d">{(it ? it.kg : p.load) ? <b style={{ color: 'var(--text)' }}>{it ? it.kg : p.load} kg{ex.load?.perHand ? ' each' : ''} · </b> : null}{it ? (it.quick ? 'Done as planned' : 'Logged') + ' · tap to change' : canLog ? `Tap = done · double-tap = enter reps${last ? ` · last ${last.join('·')}` : ''}` : TIERS[ex.tier]}</div></span>
                   <button className="chip" style={{ alignSelf: 'flex-end', minHeight: 26, padding: '2px 10px', fontSize: 12 }} onClick={e => { e.stopPropagation(); setSheet(ex.id) }}>
                     <Icon name="info" size={13} /> How to</button>
                 </div>
@@ -198,7 +199,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
           <div className="row">
             <span className={`ico ${ask.it ? 'good' : ''}`}><Icon name={ask.it ? 'check' : exIcon(ask.p.ex)} /></span>
             <span className="grow"><h2>{ask.it ? `Mark ${ask.p.ex.name} as not done?` : `Mark ${ask.p.ex.name} done?`}</h2>
-              <div className="d">{ask.it ? `Logged: ${ask.it.sets.map(x => x.value).join(' · ')}${unit(ask.p.ex)}. Your target goes back to ${ask.it.target}${unit(ask.p.ex)}.` : `As planned: ${ask.p.sets} × ${ask.p.target}${unit(ask.p.ex) || ' reps'}`}</div></span>
+              <div className="d">{ask.it ? `Logged: ${ask.it.sets.map(x => x.value).join(' · ')}${unit(ask.p.ex)}. Your target goes back to ${ask.it.target}${unit(ask.p.ex)}.` : `As planned: ${ask.p.sets} × ${ask.p.target}${unit(ask.p.ex) || ' reps'}${ask.p.load ? ` at ${ask.p.load} kg` : ''}`}</div></span>
           </div>
           <div className="row">
             <button className="btn ghost" onClick={() => setAsk(null)}>No</button>
@@ -238,9 +239,10 @@ function LogEdit({ row, date, onClose }: { row: { p: Planned; it: ExerciseLog };
   const { p, it } = row, U = unit(p.ex)
   const [vals, setVals] = useState(it.sets.map(x => x.value))
   const [rpe, setRpe] = useState(Math.max(...it.sets.map(x => x.rpe)))
+  const [kg, setKg] = useState(it.sets[0]?.kg ?? p.load)
   const save = () => {
     let d: Decision | undefined
-    setState(x => { const r = logExercise(x, date, p, vals.map(value => ({ value, rpe })), false); d = r.decision; return r.state })
+    setState(x => { const r = logExercise(x, date, { ...p, load: kg ?? p.load }, vals.map(value => ({ value, rpe, kg })), false); d = r.decision; return r.state })
     if (d) toast(`Saved. ${d.tag}: next target ${d.next}${U}`)
     onClose()
   }
@@ -249,6 +251,10 @@ function LogEdit({ row, date, onClose }: { row: { p: Planned; it: ExerciseLog };
       <div className="row between"><button className="chip" onClick={onClose}>Cancel</button><span className="t">{p.ex.name}</span>
         <button className="chip" style={{ background: 'var(--accent)', color: 'var(--accent-ink)', borderColor: 'var(--accent)', fontWeight: 700 }} onClick={save}>Save</button></div>
       <div className="d">Target was {p.sets} × {p.target}{U || ' reps'}. Enter what you actually did so the next target is right.</div>
+      {p.ex.load && kg != null && p.ex.load.inc > 0 && (
+        <div className="tile row"><span className="grow t">Weight{p.ex.load.perHand ? ' (each)' : ''}</span>
+          <Stepper value={kg} min={0} max={400} step={p.ex.load.barbell ? 2.5 : p.ex.load.inc} suffix=" kg" onChange={setKg} /></div>
+      )}
       <div className="card list">
         {vals.map((v, k) => (
           <div key={k} className="item"><span className="grow">Set {k + 1}</span>

@@ -9,7 +9,7 @@ const KEY = 'calx-state-v1'
 
 const fresh = (): State => ({
   version: 1, onboarded: false, startDate: dayKey(), equipment: ['mat', 'bricks', 'belt', 'handles', 'dumbbell', 'gripper'],
-  mastered: [], targets: {}, sessions: [], checks: {}, readiness: {}, rules: { ...DEFAULT_RULES }, breath: structuredClone(DEFAULT_BREATH),
+  mastered: [], targets: {}, sessions: [], checks: {}, readiness: {}, rules: { ...DEFAULT_RULES }, breath: structuredClone(DEFAULT_BREATH), style: 'cali', loads: {},
   reminders: structuredClone(DEFAULT_REMINDERS), pushOn: false, body: structuredClone(DEFAULT_BODY),
 })
 

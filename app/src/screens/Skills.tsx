@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { EQUIPMENT, EX, TIERS, TRACKS } from '../data/catalog'
+import { EQUIPMENT, EX, TIERS, trackById } from '../data/catalog'
 import { GuideBody } from './Manual'
-import { bests, status, targetOf, trainingNode, unit } from '../engine/progression'
+import { activeTracks, bests, loadOf, status, targetOf, trainingNode, unit } from '../engine/progression'
 import { useStore } from '../store'
 import { Sheet } from '../ui'
 import { Icon, TRACK_ICON } from '../icons'
@@ -10,10 +10,11 @@ const COLOR = { done: 'var(--good)', current: 'var(--accent)', gear: 'var(--lock
 
 export default function Skills() {
   const s = useStore()
-  const [trackId, setTrackId] = useState('push')
+  const tracks = activeTracks(s)
+  const [trackId, setTrackId] = useState(tracks[0].id)
   const [open, setOpen] = useState<string | null>(null)
-  const all = TRACKS.flatMap(t => t.nodes)
-  const t = TRACKS.find(x => x.id === trackId)!
+  const all = tracks.flatMap(t => t.nodes)
+  const t = tracks.find(x => x.id === trackId) ?? tracks[0]
   const training = trainingNode(s, t)
 
   return (
@@ -23,12 +24,12 @@ export default function Skills() {
         <span className="chip"><Icon name="trophy" size={15} /> {all.filter(n => s.mastered.includes(n.id)).length}/{all.length}</span>
       </div>
       <div className="grid3" style={{ marginTop: 16 }}>
-        {TRACKS.map(x => {
+        {tracks.map(x => {
           const d = x.nodes.filter(n => s.mastered.includes(n.id)).length, on = x.id === trackId
           return (
             <button key={x.id} className="tile mini" aria-pressed={on} onClick={() => setTrackId(x.id)}
               style={on ? { borderColor: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 8%, var(--panel))' } : undefined}>
-              <span className="ico sm"><Icon name={TRACK_ICON[x.id]} size={18} /></span>
+              <span className="ico sm"><Icon name={TRACK_ICON[x.id] ?? 'dumbbell'} size={18} /></span>
               <span className="t" style={{ fontWeight: 600 }}>{x.name}</span>
               <span className="bar" style={{ width: '100%' }}><i style={{ width: `${(d / x.nodes.length) * 100}%` }} /></span>
               <span className="d">{d}/{x.nodes.length}</span>
@@ -45,7 +46,7 @@ export default function Skills() {
             <button key={n.id} className="row" style={{ width: '100%', alignItems: 'stretch', gap: 14 }} onClick={() => setOpen(n.id)}>
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32 }}>
                 <span className={`ico sm ${st === 'done' ? 'good' : cur ? '' : 'muted'}`} style={cur ? { boxShadow: '0 0 0 2px var(--accent)' } : undefined}>
-                  <Icon name={st === 'done' ? 'check' : dim ? 'lock' : TRACK_ICON[t.id]} size={16} /></span>
+                  <Icon name={st === 'done' ? 'check' : dim ? 'lock' : TRACK_ICON[t.id] ?? 'dumbbell'} size={16} /></span>
                 {k < t.nodes.length - 1 && <span style={{ flex: 1, width: 2, minHeight: 14, margin: '4px 0', borderRadius: 2, background: st === 'done' ? COLOR.done : 'var(--line)' }} />}
               </span>
               <span className="grow" style={{ paddingBottom: 16, paddingTop: 5, opacity: dim ? 0.55 : 1 }}>
@@ -67,7 +68,7 @@ export default function Skills() {
 export function NodeSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const s = useStore()
   const n = EX[id], st = status(s, n), best = bests(s)[id]
-  const t = n.track ? TRACKS.find(x => x.id === n.track) : undefined
+  const t = trackById(n.track)
   const prev = t?.nodes[n.index - 1], nxt = t?.nodes[n.index + 1]
   const req: [string, boolean][] = []
   if (prev) req.push([`Master ${prev.name} (3 × ${prev.hi}${unit(prev)})`, s.mastered.includes(prev.id)])
@@ -80,7 +81,8 @@ export function NodeSheet({ id, onClose }: { id: string; onClose: () => void }) 
       <div className="card">
         <div className="eyebrow">Mastery goal</div>
         <div className="num" style={{ fontSize: 26 }}>3 sets × {n.hi}{unit(n) || ' reps'}{n.perSide ? ' per side' : ''}</div>
-        <div className="small muted">Current target {targetOf(s, n)}{unit(n)} · best {best ? `${best.value}${unit(n)}` : '–'}</div>
+        <div className="small muted">Current target {targetOf(s, n)}{unit(n)}{n.load ? ` at ${loadOf(s, n)} kg` : ''} · best {best ? `${best.value}${unit(n)}` : '–'}</div>
+        {n.load?.grad && <div className="small muted">Moves on to the next lift at {n.load.grad} kg for {n.hi} reps.</div>}
       </div>
       {req.length > 0 && <div className="stack" style={{ gap: 6 }}><div className="eyebrow">To unlock</div>
         {req.map(([l, ok]) => <div key={l} className="row small"><span style={{ color: ok ? 'var(--good)' : 'var(--bad)' }}>{ok ? '✓' : '✕'}</span>{l}</div>)}</div>}

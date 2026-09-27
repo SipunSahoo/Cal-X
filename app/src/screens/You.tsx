@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { EQUIPMENT, TIERS, TRACKS, type Equipment, type Tier } from '../data/catalog'
-import { parseDay, trainingNode, type Rules } from '../engine/progression'
+import { EQUIPMENT, STYLES, TIERS, type Equipment, type Style, type Tier } from '../data/catalog'
+import { activeTracks, bodyweight, gymStart, parseDay, trainingNode, type Rules } from '../engine/progression'
+import { StylePicker } from './Onboarding'
 import { EQUIP_ICON, Icon } from '../icons'
 import { enterDemo, exitDemo, resetAll, setState, useStore } from '../store'
 import BackupSection from './Backup'
@@ -16,7 +17,16 @@ const RULES: { k: keyof Rules; label: string; min: number; max: number; step: nu
 export default function You() {
   const s = useStore()
   const [confirmReset, setConfirmReset] = useState(false)
-  const tiers = TRACKS.map(t => trainingNode(s, t).tier)
+  const tiers = activeTracks(s).map(t => trainingNode(s, t).tier)
+  // switching to gym/mixed the first time sets beginner loads; calisthenics progress is always kept
+  const setStyle = (style: Style) => {
+    setState(x => {
+      if (style === 'cali' || Object.keys(x.loads ?? {}).length) return { ...x, style }
+      const g = gymStart(0, bodyweight(x))
+      return { ...x, style, loads: g.loads, mastered: [...new Set([...x.mastered, ...g.mastered])] }
+    })
+    toast(`Training style: ${STYLES[style].name}.`)
+  }
   const level = (['E', 'A', 'I', 'B', 'F'] as Tier[]).find(t => tiers.filter(x => x === t).length >= 3) ?? [...tiers].sort()[0]
   const toggleGear = (e: Equipment) => {
     setState(x => ({ ...x, equipment: x.equipment.includes(e) ? x.equipment.filter(y => y !== e) : [...x.equipment, e] }))
@@ -36,6 +46,11 @@ export default function You() {
         </div>
         <div className="d">Training since {parseDay(s.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} · strength Mon / Wed / Fri</div>
       </div>
+
+      <section className="section">
+        <div className="section-head"><h2>Training style</h2></div>
+        <StylePicker style={s.style ?? 'cali'} onPick={setStyle} />
+      </section>
 
       <Reminders />
 

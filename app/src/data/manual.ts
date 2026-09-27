@@ -12,6 +12,8 @@ export const BASICS: { icon: string; title: string; text: string }[] = [
   { icon: 'breath', title: 'Breathe while you train', text: 'Never hold your breath through a whole set. Breathe out on the hard part (pushing up, standing up), breathe in on the easy part (lowering).' },
   { icon: 'moon', title: 'Recovery makes you stronger', text: 'Muscles grow while you rest, not while you train. Aim for 7–8 hours of sleep, drink water through the day, and eat protein at each meal (dal, paneer, eggs, curd, soya, chicken).' },
   { icon: 'flame', title: 'Consistency wins', text: 'Three average sessions every week for a year will change your body. One heroic session followed by a week off will not. Showing up is the skill.' },
+  { icon: 'dumbbell', title: 'Choosing a weight (gym)', text: 'Pick a weight you could lift 2–3 more times at the end of the set. Too light is fine at first; the app adds weight as soon as you fill the rep range. Never ego-lift.' },
+  { icon: 'info', title: 'Lifting safely (gym)', text: 'Warm up with lighter sets first. Set the safety pins or arms on squats and bench, or ask for a spotter. Keep your back neutral, brace your belly before each rep, and control the weight down.' },
   { icon: 'progress', title: 'Why it helps your health', text: 'Strength training keeps muscles and bones strong, helps control blood sugar and blood pressure, improves posture and sleep, lowers stress and makes everyday life easier as you age.' },
 ]
 
@@ -116,6 +118,12 @@ const TRACK_FALLBACK: Record<string, string> = {
   core: 'An advanced core skill that needs strong compression and shoulder strength.',
   handstand: 'An advanced overhead skill for shoulders and balance.',
   planche: 'An advanced straight-arm skill. It takes years; wrists and shoulders need to be well prepared.',
+  g_squat: 'Builds strong legs and hips, the base for running, jumping and everyday strength.',
+  g_hinge: 'Strengthens the back of your body (hamstrings, glutes, lower back), which protects your spine.',
+  g_press: 'Builds chest, shoulders and arms for pushing strength.',
+  g_ohp: 'Builds strong, stable shoulders for pressing overhead.',
+  g_row: 'Strengthens your upper back and improves posture after long days of sitting.',
+  g_pull: 'Builds your back and arms, and leads toward bodyweight pull-ups.',
 }
 
 /** Full guide if written, otherwise a short one built from the exercise's cue. */

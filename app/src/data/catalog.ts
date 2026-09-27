@@ -21,6 +21,17 @@ export interface Exercise {
   perSide?: boolean
   track: string | null // null = accessory
   index: number // position in track
+  load?: Load // weighted gym lift
+}
+
+/** Weighted lift settings (kg). Dumbbell weights are per hand. */
+export interface Load {
+  inc: number // weight step when the rep range is maxed
+  start: number // typical starting weight for a beginner on this lift
+  grad?: number // at this weight, move on to the next lift in the track
+  barbell?: boolean // show plate calculator + warm-up sets
+  bw?: number // start as a fraction of bodyweight for experienced lifters
+  perHand?: boolean
 }
 
 type Row = [id: string, name: string, type: 'r' | 'h', lo: number, hi: number, tier: Tier, needs: Equipment[], cue: string, perSide?: boolean]
@@ -124,3 +135,53 @@ export const CHECKS: { key: string; short: string; title: string; sub: string; g
 
 export const videoUrl = (name: string) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' calisthenics tutorial')}`
+
+// ---------- gym mode ----------
+type GymRow = [id: string, name: string, lo: number, hi: number, tier: Tier, load: Load, cue: string]
+const GYM_RAW: { id: string; name: string; rows: GymRow[] }[] = [
+  { id: 'g_squat', name: 'Squat', rows: [
+    ['leg_press', 'Leg press', 10, 15, 'F', { inc: 5, start: 40, grad: 100 }, 'Feet shoulder-width, lower until knees reach ~90°, do not lock knees at the top.'],
+    ['g_goblet', 'Goblet squat', 8, 12, 'B', { inc: 2, start: 10, grad: 24 }, 'Dumbbell at chest, sit between your knees, heels down.'],
+    ['back_squat', 'Barbell back squat', 5, 8, 'I', { inc: 5, start: 30, barbell: true, bw: 0.8 }, 'Bar on upper back, brace, hips below knees, use the safety pins.'],
+  ] },
+  { id: 'g_hinge', name: 'Hinge', rows: [
+    ['db_rdl', 'Dumbbell Romanian deadlift', 8, 12, 'F', { inc: 2, start: 10, grad: 24, perHand: true }, 'Soft knees, push hips back, dumbbells slide down the thighs, flat back.'],
+    ['bb_rdl', 'Barbell Romanian deadlift', 8, 10, 'B', { inc: 5, start: 40, grad: 80, barbell: true }, 'Bar close to legs, hinge until a hamstring stretch, squeeze glutes up.'],
+    ['deadlift', 'Deadlift', 3, 6, 'I', { inc: 5, start: 60, barbell: true, bw: 1 }, 'Bar over mid-foot, brace, push the floor away, bar stays touching the legs.'],
+  ] },
+  { id: 'g_press', name: 'Bench', rows: [
+    ['db_bench', 'Dumbbell bench press', 8, 12, 'F', { inc: 2, start: 8, grad: 22, perHand: true }, 'Shoulder blades squeezed, lower to chest level, press up and slightly in.'],
+    ['bench', 'Barbell bench press', 5, 8, 'I', { inc: 2.5, start: 30, barbell: true, bw: 0.6 }, 'Feet planted, bar to lower chest, elbows ~45°. Use safety arms or a spotter.'],
+  ] },
+  { id: 'g_ohp', name: 'Overhead', rows: [
+    ['db_ohp', 'Seated dumbbell shoulder press', 8, 12, 'F', { inc: 2, start: 6, grad: 18, perHand: true }, 'Back against the bench, press up without arching, lower to ear level.'],
+    ['ohp', 'Barbell overhead press', 5, 8, 'I', { inc: 2.5, start: 20, barbell: true, bw: 0.4 }, 'Glutes tight, press the bar in a straight line, head through at the top.'],
+  ] },
+  { id: 'g_row', name: 'Row', rows: [
+    ['cable_row', 'Seated cable row', 10, 12, 'F', { inc: 5, start: 25, grad: 60 }, 'Chest up, pull the handle to your belly, squeeze shoulder blades.'],
+    ['bb_row', 'Barbell row', 6, 10, 'I', { inc: 2.5, start: 30, barbell: true, bw: 0.5 }, 'Hinge to ~45°, pull the bar to your lower ribs, no jerking.'],
+  ] },
+  { id: 'g_pull', name: 'Pulldown', rows: [
+    ['lat_pd', 'Lat pulldown', 8, 12, 'F', { inc: 5, start: 25, grad: 60 }, 'Pull the bar to the top of your chest, elbows down, control it back up.'],
+    ['g_pullup', 'Pull-up', 3, 10, 'I', { inc: 0, start: 0 }, 'Full hang, chest to the bar, no swinging.'],
+  ] },
+]
+const GYM_ACC_RAW: GymRow[] = [
+  ['g_curl', 'Dumbbell curl', 10, 15, 'F', { inc: 1, start: 5, perHand: true }, 'Elbows by your sides, no swinging.'],
+  ['g_calf', 'Standing calf raise', 12, 20, 'F', { inc: 5, start: 20 }, 'Full stretch at the bottom, pause at the top.'],
+]
+const makeGym = ([id, name, lo, hi, tier, load, cue]: GymRow, track: string | null, index: number): Exercise =>
+  ({ id, name, hold: false, lo, hi, tier, needs: [], cue, track, index, load: load.inc || load.start ? load : undefined })
+
+export const GYM_TRACKS: Track[] = GYM_RAW.map(t => ({ id: t.id, name: t.name, nodes: t.rows.map((r, i) => makeGym(r, t.id, i)) }))
+export const GYM_ACCESSORIES: Exercise[] = GYM_ACC_RAW.map(r => makeGym(r, null, 0))
+export const ALL_TRACKS: Track[] = [...TRACKS, ...GYM_TRACKS]
+for (const e of [...GYM_TRACKS.flatMap(t => t.nodes), ...GYM_ACCESSORIES]) EX[e.id] = e
+export const trackById = (id: string | null) => ALL_TRACKS.find(t => t.id === id)
+
+export type Style = 'cali' | 'gym' | 'mixed'
+export const STYLES: Record<Style, { name: string; icon: string; short: string }> = {
+  cali: { name: 'Calisthenics', icon: 'push', short: 'Bodyweight skills, minimal equipment' },
+  gym: { name: 'Gym', icon: 'dumbbell', short: 'Machines, dumbbells and barbells' },
+  mixed: { name: 'Mixed', icon: 'target', short: 'Calisthenics upper body + gym legs and back' },
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TRACKS, videoUrl, type Exercise } from '../data/catalog'
+import { trackById, videoUrl, type Exercise } from '../data/catalog'
 import { BASICS, guideFor } from '../data/manual'
 import { buildSession } from '../engine/progression'
 import { Icon, exIcon } from '../icons'
@@ -10,7 +10,7 @@ import { Page } from '../ui'
 /** How-to block for one exercise: why, steps, mistakes, breathing, easier/harder. */
 export function GuideBody({ ex }: { ex: Exercise }) {
   const g = guideFor(ex)
-  const t = ex.track ? TRACKS.find(x => x.id === ex.track) : undefined
+  const t = trackById(ex.track)
   const easier = t?.nodes[ex.index - 1], harder = t?.nodes[ex.index + 1]
   return (
     <>

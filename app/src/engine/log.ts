@@ -17,13 +17,14 @@ export function logExercise(s: State, date: string, p: Planned, sets: SetLog[], 
   if (prev) base = undoLog(s, date, p.ex.id) // editing: roll back the earlier decision first
   const d = evaluate(p, sets, base.rules)
   const unlocked = d.tag === 'Level up' && !base.mastered.includes(p.ex.id)
-  const item: ExerciseLog = { id: p.ex.id, planned: p.sets, target: p.target, sets, quick, unlocked: unlocked || undefined }
+  const item: ExerciseLog = { id: p.ex.id, planned: p.sets, target: p.target, sets, quick, unlocked: unlocked || undefined, kg: p.load }
   const minutes = Math.round(p.sets * ((p.ex.hold ? p.target : p.target * 3) + (p.ex.track ? 90 : 60)) / 60)
   return {
     decision: d,
     state: {
       ...base,
       targets: { ...base.targets, [p.ex.id]: d.next },
+      loads: d.nextLoad != null ? { ...base.loads, [p.ex.id]: d.nextLoad } : base.loads,
       mastered: unlocked ? [...base.mastered, p.ex.id] : base.mastered,
       sessions: mergeIntoDay(base.sessions, date, [item], minutes),
     },
@@ -39,6 +40,7 @@ export function undoLog(s: State, date: string, id: string): State {
   return {
     ...s,
     targets: { ...s.targets, [id]: item.target },
+    loads: item.kg != null ? { ...s.loads, [id]: item.kg } : s.loads,
     mastered: item.unlocked ? s.mastered.filter(m => m !== id) : s.mastered,
     sessions: items.length ? s.sessions.map(x => x === ses ? { ...ses, items } : x) : s.sessions.filter(x => x !== ses),
   }

@@ -1,14 +1,15 @@
-import { ACCESSORIES, EX, TRACKS, type Equipment, type Exercise, type Track } from '../data/catalog'
+import { ACCESSORIES, EX, GYM_ACCESSORIES, GYM_TRACKS, TRACKS, trackById, type Equipment, type Exercise, type Style, type Track } from '../data/catalog'
 import type { BreathState } from '../data/breathing'
 import type { Reminder } from '../data/reminders'
 import type { Body } from '../data/body'
 
 // ---------- stored state ----------
-export interface SetLog { value: number; rpe: number }
+export interface SetLog { value: number; rpe: number; kg?: number }
 export interface ExerciseLog {
   id: string; planned: number; target: number; sets: SetLog[]; pain?: boolean
   quick?: boolean // ticked on Today instead of the workout player
   unlocked?: boolean // this log mastered the exercise (undone if unticked)
+  kg?: number // working weight for weighted lifts (restored if unticked)
 }
 export interface Session { id: string; date: string; minutes: number; items: ExerciseLog[] }
 export interface Readiness { sleep: number; energy: number; sore: number; pain: boolean; score: number }
@@ -30,6 +31,8 @@ export interface State {
   pushOn: boolean
   body: Body
   demo?: boolean // sample data loaded; real data is parked in storage
+  style?: Style // calisthenics (default), gym or mixed
+  loads?: Record<string, number> // current working weight (kg) per weighted lift
 }
 
 export const DEFAULT_RULES: Rules = { maxRpe: 8, failPct: 75, lightBelow: 50 }
@@ -48,7 +51,7 @@ const hasGear = (s: State, e: Exercise) => e.needs.every(n => s.equipment.includ
 export type NodeStatus = 'done' | 'current' | 'gear' | 'locked'
 export function status(s: State, e: Exercise): NodeStatus {
   if (s.mastered.includes(e.id)) return 'done'
-  const prev = e.track ? TRACKS.find(t => t.id === e.track)!.nodes[e.index - 1] : undefined
+  const prev = e.track ? trackById(e.track)?.nodes[e.index - 1] : undefined
   if (prev && !s.mastered.includes(prev.id)) return 'locked'
   return hasGear(s, e) ? 'current' : 'gear'
 }
@@ -63,12 +66,53 @@ export function trainingNode(s: State, t: Track): Exercise {
 
 export const targetOf = (s: State, e: Exercise) => s.targets[e.id] ?? e.lo
 
-export interface Planned { ex: Exercise; sets: number; target: number }
+// ---------- style: which tracks make up a session ----------
+const MIXED_CALI = ['push', 'pull', 'core', 'handstand'], MIXED_GYM = ['g_squat', 'g_hinge']
+export function activeTracks(s: State): Track[] {
+  if (s.style === 'gym') return GYM_TRACKS
+  if (s.style === 'mixed') return [...TRACKS.filter(t => MIXED_CALI.includes(t.id)), ...GYM_TRACKS.filter(t => MIXED_GYM.includes(t.id))]
+  return TRACKS
+}
+const accessories = (s: State) => s.style === 'gym' ? GYM_ACCESSORIES : ACCESSORIES.filter(a => hasGear(s, a))
+
+// ---------- weights ----------
+export const roundTo = (kg: number, step: number) => step > 0 ? Math.max(step, Math.round(kg / step) * step) : kg
+export const bodyweight = (s: State) => s.body?.weights.at(-1)?.kg ?? 70
+/** Current working weight for a lift: last logged/progressed weight, else its beginner start. */
+export const loadOf = (s: State, e: Exercise) => s.loads?.[e.id] ?? e.load?.start ?? 0
+/** Plates per side for a 20 kg bar, e.g. [20, 5, 1.25]. */
+export function plates(kg: number, bar = 20): number[] {
+  let side = Math.max(0, (kg - bar) / 2); const out: number[] = []
+  for (const p of [25, 20, 15, 10, 5, 2.5, 1.25]) while (side >= p - 1e-9) { out.push(p); side -= p }
+  return out
+}
+/** Warm-up ramp for barbell lifts: empty bar, then ~50% and ~70% of the working weight. */
+export function warmups(kg: number): { kg: number; reps: number }[] {
+  if (kg <= 30) return [{ kg: 20, reps: 10 }]
+  return [{ kg: 20, reps: 10 }, { kg: roundTo(kg * 0.5, 2.5), reps: 5 }, { kg: roundTo(kg * 0.7, 2.5), reps: 3 }].filter((w, i, a) => i === 0 || w.kg > a[i - 1].kg)
+}
+/** Estimated one-rep max (Epley). */
+export const e1rm = (kg: number, reps: number) => Math.round(kg * (1 + reps / 30))
+
+export interface Planned { ex: Exercise; sets: number; target: number; load?: number }
 export function buildSession(s: State, r?: Readiness): Planned[] {
   const light = !!r && r.score < s.rules.lightBelow
-  return [...TRACKS.map(t => trainingNode(s, t)), ...ACCESSORIES.filter(a => hasGear(s, a))].map(ex => ({
-    ex, sets: Math.max(1, setsFor(ex) - (light ? 1 : 0)), target: targetOf(s, ex),
+  return [...activeTracks(s).map(t => trainingNode(s, t)), ...accessories(s)].map(ex => ({
+    ex, sets: Math.max(1, setsFor(ex) - (light ? 1 : 0)), target: targetOf(s, ex), load: ex.load ? loadOf(s, ex) : undefined,
   }))
+}
+
+/** Starting point for gym lifts. experience: 0 = new, 1 = some, 2 = experienced (barbell, loads from bodyweight). */
+export function gymStart(experience: number, bw: number): { mastered: string[]; loads: Record<string, number> } {
+  const mastered: string[] = [], loads: Record<string, number> = {}
+  for (const t of GYM_TRACKS) {
+    const barbell = t.nodes.findIndex(n => n.load?.barbell)
+    const i = experience === 0 ? 0 : experience === 1 ? Math.min(1, t.nodes.length - 1) : barbell >= 0 ? barbell : t.nodes.length - 1
+    t.nodes.slice(0, i).forEach(n => mastered.push(n.id))
+    const n = t.nodes[i]
+    if (n.load) loads[n.id] = experience === 2 && n.load.bw ? roundTo(bw * n.load.bw, n.load.barbell ? 2.5 : n.load.inc || 1) : n.load.start
+  }
+  return { mastered, loads }
 }
 
 export function readinessScore(sleep: number, energy: number, sore: number) {
@@ -77,7 +121,7 @@ export function readinessScore(sleep: number, energy: number, sore: number) {
 
 // ---------- coaching decision ----------
 export type Tag = 'Level up' | 'Increase' | 'Hold' | 'Ease off'
-export interface Decision { tag: Tag; next: number; why: string; advanceTo?: Exercise }
+export interface Decision { tag: Tag; next: number; why: string; advanceTo?: Exercise; nextLoad?: number }
 
 export function evaluate(p: Planned, sets: SetLog[], rules: Rules, pain?: boolean): Decision {
   const { ex, target } = p, U = unit(ex), step = ex.hold ? 5 : 1
@@ -90,9 +134,31 @@ export function evaluate(p: Planned, sets: SetLog[], rules: Rules, pain?: boolea
   const pct = Math.round((total / planned) * 100)
   const allHit = vals.length >= p.sets && vals.every(v => v >= target)
 
+  // weighted lifts: fill the rep range, then add weight and start again at the bottom of the range
+  if (ex.load && ex.load.inc > 0 && p.load != null) {
+    const L = p.load, inc = ex.load.inc, nxt = ex.track ? trackById(ex.track)?.nodes[ex.index + 1] : undefined
+    if (allHit && rpe <= rules.maxRpe) {
+      if (vals.every(v => v >= ex.hi)) {
+        const up = L + inc
+        if (ex.load.grad && up > ex.load.grad && nxt)
+          return { tag: 'Level up', next: target, nextLoad: L, advanceTo: nxt, why: `${L} kg for ${ex.hi} reps on every set. You're ready for ${nxt.name}.` }
+        return { tag: 'Increase', next: ex.lo, nextLoad: up, why: `Every set reached ${ex.hi} reps at ${L} kg. Add ${inc} kg: next time ${up} kg × ${ex.lo} reps, then build the reps again.` }
+      }
+      const next = Math.min(ex.hi, target + (vals.every(v => v >= target + 2) ? 2 : 1))
+      return { tag: 'Increase', next, nextLoad: L, why: `All sets reached ${target} reps at ${L} kg. Same weight, aim for ${next} reps.` }
+    }
+    if (allHit) return { tag: 'Hold', next: target, nextLoad: L, why: `Target hit, but effort ${rpe}/10 is above ${rules.maxRpe}. Repeat ${L} kg × ${target} until it feels controlled.` }
+    if (pct < rules.failPct) {
+      if (target > ex.lo) return { tag: 'Ease off', next: target - 1, nextLoad: L, why: `${pct}% of planned reps. Keep ${L} kg, aim for ${target - 1} reps.` }
+      const down = roundTo(L * 0.9, ex.load.barbell ? 2.5 : inc)
+      return { tag: 'Ease off', next: ex.lo, nextLoad: down, why: `${pct}% of planned reps at the bottom of the range. Drop 10% to ${down} kg and rebuild.` }
+    }
+    return { tag: 'Hold', next: target, nextLoad: L, why: `${pct}% of planned reps. Keep ${L} kg × ${target} and aim to hit every set.` }
+  }
+
   if (allHit && rpe <= rules.maxRpe) {
     if (vals.every(v => v >= ex.hi)) {
-      const nxt = ex.track ? TRACKS.find(t => t.id === ex.track)!.nodes[ex.index + 1] : undefined
+      const nxt = ex.track ? trackById(ex.track)?.nodes[ex.index + 1] : undefined
       return { tag: 'Level up', next: target, advanceTo: nxt,
         why: `Every set hit ${ex.hi}${U}, the top of the range, at effort ${rpe}/10 or easier. ${ex.name} is mastered.${nxt ? ` Next: ${nxt.name} at ${nxt.lo}${unit(nxt)}.` : ''}` }
     }

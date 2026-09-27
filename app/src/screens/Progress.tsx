@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { EX, TRACKS, WEEK } from '../data/catalog'
-import { addDays, bests, dayKey, parseDay, unit, weekStreak } from '../engine/progression'
+import { EX, WEEK } from '../data/catalog'
+import { addDays, bests, dayKey, parseDay, unit, weekStreak, activeTracks, e1rm } from '../engine/progression'
 import { useStore } from '../store'
 import { Icon, exIcon } from '../icons'
 import { BodySection } from './Body'
@@ -9,7 +9,8 @@ const WEEKS = 10
 
 export default function Progress() {
   const s = useStore()
-  const [trackId, setTrackId] = useState('push')
+  const tracks = activeTracks(s)
+  const [trackId, setTrackId] = useState(tracks[0].id)
   const best = bests(s)
   const today = new Date(), todayKey = dayKey(today)
   const monday = addDays(today, -((today.getDay() + 6) % 7))
@@ -36,9 +37,9 @@ export default function Progress() {
   const CELL = { str: 'var(--accent)', yoga: 'var(--breath)', rest: 'var(--panel-2)', miss: 'transparent', none: 'transparent' }
 
   // chart: best set per session for the chosen track
-  const track = TRACKS.find(t => t.id === trackId)!
+  const track = tracks.find(t => t.id === trackId) ?? tracks[0]
   const pts = s.sessions.flatMap(ses => ses.items.filter(it => EX[it.id]?.track === trackId && it.sets.length)
-    .map(it => ({ id: it.id, v: Math.max(...it.sets.map(x => x.value)) })))
+    .map(it => ({ id: it.id, v: Math.max(...it.sets.map(x => x.kg ? e1rm(x.kg, x.value) : x.value)) })))
   const W = 320, H = 150, P = 26
   const max = Math.max(5, ...pts.map(p => p.v)) * 1.15
   const x = (k: number) => P + (pts.length < 2 ? (W - 2 * P) / 2 : k * (W - 2 * P) / (pts.length - 1))
@@ -88,7 +89,7 @@ export default function Progress() {
       <div className="section">
         <div className="section-head"><h2>Best set per session</h2></div>
         <div className="row scroll-x" style={{ gap: 6 }}>
-          {TRACKS.map(t => <button key={t.id} className={`chip ${t.id === trackId ? 'on' : ''}`} onClick={() => setTrackId(t.id)}>{t.name}</button>)}
+          {tracks.map(t => <button key={t.id} className={`chip ${t.id === trackId ? 'on' : ''}`} onClick={() => setTrackId(t.id)}>{t.name}</button>)}
         </div>
         <div className="card">
           {pts.length ? <>
@@ -100,7 +101,7 @@ export default function Progress() {
               </g>)}
             </svg>
             <div className="row wrap small muted" style={{ marginTop: 6 }}>
-              {segs.map((sg, k) => <span key={k}><span style={{ color: segColor(k) }}>━</span> {EX[sg.id].name}{EX[sg.id].hold ? ' (s)' : ''}</span>)}
+              {segs.map((sg, k) => <span key={k}><span style={{ color: segColor(k) }}>━</span> {EX[sg.id].name}{EX[sg.id].hold ? ' (s)' : EX[sg.id].load ? ' (est. max kg)' : ''}</span>)}
             </div>
           </> : <div className="small muted">No {track.name.toLowerCase()} sets logged yet.</div>}
         </div>
