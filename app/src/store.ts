@@ -52,3 +52,18 @@ export async function importBackup(file: File) {
 }
 
 export function resetAll() { setState(fresh) }
+
+// ---- demo mode: park the real data, show sample data, restore on exit ----
+const REAL_KEY = 'calx-real-while-demo'
+export async function enterDemo() {
+  const { makeDemo } = await import('./engine/demo')
+  try { localStorage.setItem(REAL_KEY, JSON.stringify(state)) } catch { throw new Error('Could not save your data aside, so demo mode was not started.') }
+  setState(s => makeDemo(s))
+}
+export function exitDemo() {
+  let real: State | null = null
+  try { const raw = localStorage.getItem(REAL_KEY); if (raw) real = JSON.parse(raw) } catch { /* handled below */ }
+  // keep settings changed during the demo (breathing, reminders); everything else comes back
+  setState(s => real ? { ...fresh(), ...real, breath: s.breath, reminders: s.reminders, pushOn: s.pushOn, demo: false } : { ...s, demo: false })
+  try { localStorage.removeItem(REAL_KEY) } catch { /* ignore */ }
+}

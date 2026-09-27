@@ -25,6 +25,7 @@ export interface State {
   reminders: Reminder[]
   pushOn: boolean
   body: Body
+  demo?: boolean // sample data loaded; real data is parked in storage
 }
 
 export const DEFAULT_RULES: Rules = { maxRpe: 8, failPct: 75, lightBelow: 50 }

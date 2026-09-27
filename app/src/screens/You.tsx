@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { EQUIPMENT, TIERS, TRACKS, type Equipment, type Tier } from '../data/catalog'
 import { parseDay, trainingNode, type Rules } from '../engine/progression'
 import { EQUIP_ICON, Icon } from '../icons'
-import { exportBackup, importBackup, resetAll, setState, useStore } from '../store'
+import { enterDemo, exitDemo, exportBackup, importBackup, resetAll, setState, useStore } from '../store'
 import { toast } from '../ui'
 import Reminders from './Reminders'
 
@@ -91,6 +91,16 @@ export default function You() {
             <button key={t} className="tile mini" onClick={() => setTheme(t)}><span className="ico sm muted"><Icon name={ic} size={18} /></span><span className="t">{l}</span></button>
           ))}
         </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head"><h2>Preview</h2></div>
+        <button className="tile row" style={s.demo ? { borderColor: 'var(--accent)' } : undefined}
+          onClick={async () => { if (s.demo) { exitDemo(); toast('Your real data is back.') } else { try { await enterDemo(); toast('Demo data loaded. Your real data is safe.') } catch (e) { toast((e as Error).message) } } }}>
+          <span className="ico"><Icon name={s.demo ? 'close' : 'progress'} /></span>
+          <span className="grow"><span className="t">{s.demo ? 'Exit demo data' : 'Preview with demo data'}</span>
+            <div className="d">{s.demo ? 'Brings back your real data exactly as it was.' : '8 weeks of sample training, breathing and weigh-ins. Your real data is set aside, not deleted.'}</div></span>
+        </button>
       </section>
 
       <section className="section">

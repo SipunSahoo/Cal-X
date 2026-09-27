@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { cacheReminders } from './engine/push'
-import { useStore } from './store'
+import { exitDemo, useStore } from './store'
 import { Toaster } from './ui'
 import { Icon } from './icons'
 import Today from './screens/Today'
@@ -30,6 +30,11 @@ export default function App() {
   return (
     <div className="shell">
       <main className="screen" ref={main}>
+        {s.demo && (
+          <button className="tile row" style={{ marginBottom: 14, borderColor: 'var(--accent)', background: 'var(--accent-soft)', padding: '10px 12px' }} onClick={exitDemo}>
+            <Icon name="info" size={18} /><span className="grow t">Demo data. Nothing here is yours.</span><span className="chip">Exit</span>
+          </button>
+        )}
         {tab === 'today' && <Today onStart={() => setTraining(true)} onBreathe={() => go('breathe')} />}
         {tab === 'skills' && <Skills />}
         {tab === 'breathe' && <Breathe />}
