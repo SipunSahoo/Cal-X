@@ -50,6 +50,9 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
       })
     : doneSession.items.map(it => ({ p: { ex: EX[it.id], sets: it.planned, target: it.target }, it: it.sets.length ? it : undefined }))
   const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 })
+  const tapTimer = useRef<number | undefined>(undefined)
+  const [ask, setAsk] = useState<Row | null>(null)
+  const openEdit = (p: Planned, it?: ExerciseLog) => setEdit({ p, it: it ?? { id: p.ex.id, planned: p.sets, target: p.target, sets: Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })) } })
   const findLog = (id: string) => s.sessions.find(x => x.date === sel)?.items.find(it => it.id === id && it.sets.length)
   const doneCount = rows.filter(x => x.it).length, allDone = rows.length > 0 && doneCount === rows.length
 
@@ -116,11 +119,11 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
               const ex = p.ex, last = lastSets(s, ex.id)
               const open = () => {
                 if (!canLog) { setSheet(ex.id); toast('You can log this on the day.'); return }
-                const now = Date.now(), dbl = lastTap.current.id === ex.id && now - lastTap.current.t < 400
+                const now = Date.now(), dbl = lastTap.current.id === ex.id && now - lastTap.current.t < 350
                 lastTap.current = { id: ex.id, t: now }
-                if (dbl) { const cur = findLog(ex.id); setEdit({ p, it: cur ?? { id: ex.id, planned: p.sets, target: p.target, sets: Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })) } }); return }
-                if (it) toast('Double-tap to change reps or unmark.')
-                else tick(p)
+                window.clearTimeout(tapTimer.current)
+                if (dbl) { openEdit(p, it); return }
+                tapTimer.current = window.setTimeout(() => setAsk({ p, it }), 280)
               }
               return (
                 <div key={ex.id} className={`tile ${it ? 'on' : ''}`} role="button" tabIndex={0} aria-pressed={!!it}
@@ -130,7 +133,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
                     <span className="n" style={{ fontSize: 18, color: it ? 'var(--good)' : undefined }}>{it ? it.sets.map(x => x.value).join('·') : `${p.sets}×${p.target}${unit(ex)}`}</span>
                   </span>
                   <span><div className="t">{ex.name}</div>
-                    <div className="d">{it ? (it.quick ? 'Done as planned' : 'Logged') + ' · double-tap to edit' : canLog ? `Tap = done · double-tap = enter reps${last ? ` · last ${last.join('·')}` : ''}` : TIERS[ex.tier]}</div></span>
+                    <div className="d">{it ? (it.quick ? 'Done as planned' : 'Logged') + ' · tap to change' : canLog ? `Tap = done · double-tap = enter reps${last ? ` · last ${last.join('·')}` : ''}` : TIERS[ex.tier]}</div></span>
                   <button className="chip" style={{ alignSelf: 'flex-end', minHeight: 26, padding: '2px 10px', fontSize: 12 }} onClick={e => { e.stopPropagation(); setSheet(ex.id) }}>
                     <Icon name="info" size={13} /> How to</button>
                 </div>
@@ -191,6 +194,22 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
       {showPlan && <Plan onClose={() => setShowPlan(false)} />}
       {showManual && <Manual onClose={() => setShowManual(false)} />}
       {edit && <LogEdit row={edit} date={sel} onClose={() => setEdit(null)} />}
+      {ask && (
+        <Sheet onClose={() => setAsk(null)}>
+          <div className="row">
+            <span className={`ico ${ask.it ? 'good' : ''}`}><Icon name={ask.it ? 'check' : exIcon(ask.p.ex)} /></span>
+            <span className="grow"><h2>{ask.it ? `Mark ${ask.p.ex.name} as not done?` : `Mark ${ask.p.ex.name} done?`}</h2>
+              <div className="d">{ask.it ? `Logged: ${ask.it.sets.map(x => x.value).join(' · ')}${unit(ask.p.ex)}. Your target goes back to ${ask.it.target}${unit(ask.p.ex)}.` : `As planned: ${ask.p.sets} × ${ask.p.target}${unit(ask.p.ex) || ' reps'}`}</div></span>
+          </div>
+          <div className="row">
+            <button className="btn ghost" onClick={() => setAsk(null)}>No</button>
+            <button className="btn" style={ask.it ? { background: 'var(--bad)', color: '#fff' } : undefined}
+              onClick={() => { const a = ask; setAsk(null); if (a.it) { setState(x => undoLog(x, sel, a.p.ex.id)); toast('Marked as not done.') } else tick(a.p) }}>Yes</button>
+          </div>
+          <button className="chip" style={{ alignSelf: 'center' }} onClick={() => { const a = ask; setAsk(null); openEdit(a.p, a.it) }}>
+            <Icon name="edit" size={14} /> {ask.it ? 'Change reps instead' : 'Enter actual reps instead'}</button>
+        </Sheet>
+      )}
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}
     </>
