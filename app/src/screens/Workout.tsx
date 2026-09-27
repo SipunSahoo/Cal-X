@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { TIERS, videoUrl } from '../data/catalog'
+import { TIERS } from '../data/catalog'
 import { bests, buildSession, dayKey, evaluate, lastSets, unit, type Decision, type Planned, type SetLog } from '../engine/progression'
 import { setState, useStore } from '../store'
-import { toast } from '../ui'
+import { Sheet, toast } from '../ui'
+import { GuideBody } from './Manual'
 
 const RPE: [number, string][] = [[6, 'Easy'], [7, 'Solid'], [8, 'Hard'], [9, 'Grind'], [10, 'Max']]
 const restFor = (p: Planned) => (p.ex.track ? 90 : 60) * 1000
@@ -31,6 +32,7 @@ export default function Workout({ onClose }: { onClose: () => void }) {
   const [summary, setSummary] = useState<null | { minutes: number; results: { p: Planned; sets: SetLog[]; d: Decision; pain: boolean }[] }>(null)
   const [, tick] = useState(0)
   const [confirmQuit, setConfirmQuit] = useState(false)
+  const [howTo, setHowTo] = useState(false)
 
   // keep the screen on while training
   useEffect(() => {
@@ -145,8 +147,9 @@ export default function Workout({ onClose }: { onClose: () => void }) {
           const pn = { ...pain, [i]: true }; setPain(pn)
           toast("Noted. Stop this exercise. Cal-X can't diagnose pain. If it's sharp or lasts, see a professional."); next(logs, pn)
         }}>Something hurts</button>
-        <a className="chip" href={videoUrl(ex.name)} target="_blank" rel="noreferrer">Demo video ↗</a>
+        <button className="chip" onClick={() => setHowTo(true)}>How to</button>
       </div>
+      {howTo && <Sheet onClose={() => setHowTo(false)}><h2>{ex.name}</h2><GuideBody ex={ex} /></Sheet>}
       {items[i + 1] && <div className="small muted">Up next: {items[i + 1].ex.name} · {items[i + 1].sets} × {items[i + 1].target}{unit(items[i + 1].ex)}</div>}
     </div></div>
   )

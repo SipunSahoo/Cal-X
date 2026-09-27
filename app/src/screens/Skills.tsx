@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { EQUIPMENT, EX, TIERS, TRACKS, videoUrl } from '../data/catalog'
+import { EQUIPMENT, EX, TIERS, TRACKS } from '../data/catalog'
+import { GuideBody } from './Manual'
 import { bests, status, targetOf, trainingNode, unit } from '../engine/progression'
 import { useStore } from '../store'
 import { Sheet } from '../ui'
@@ -84,8 +85,7 @@ export function NodeSheet({ id, onClose }: { id: string; onClose: () => void }) 
       {req.length > 0 && <div className="stack" style={{ gap: 6 }}><div className="eyebrow">To unlock</div>
         {req.map(([l, ok]) => <div key={l} className="row small"><span style={{ color: ok ? 'var(--good)' : 'var(--bad)' }}>{ok ? '✓' : '✕'}</span>{l}</div>)}</div>}
       {nxt && <div className="small muted">Unlocks next: <b style={{ color: 'var(--text)' }}>{nxt.name}</b></div>}
-      <div className="stack" style={{ gap: 6 }}><div className="eyebrow">Form cue</div><div>{n.cue}</div></div>
-      <a className="btn ghost" href={videoUrl(n.name)} target="_blank" rel="noreferrer">Watch demo ↗</a>
+      <GuideBody ex={n} />
     </Sheet>
   )
 }

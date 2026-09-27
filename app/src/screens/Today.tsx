@@ -6,6 +6,7 @@ import { setState, useStore } from '../store'
 import { CheckRow, Choice, Sheet } from '../ui'
 import { NodeSheet } from './Skills'
 import Plan from './Plan'
+import Manual from './Manual'
 import { BodyPrompt } from './Body'
 
 export default function Today({ onStart, onBreathe }: { onStart: () => void; onBreathe: () => void }) {
@@ -15,6 +16,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const [sel, setSel] = useState(todayKey)
   const [sheet, setSheet] = useState<null | 'checkin' | string>(null)
   const [showPlan, setShowPlan] = useState(false)
+  const [showManual, setShowManual] = useState(false)
   const selDate = parseDay(sel), plan = WEEK[selDate.getDay()], isToday = sel === todayKey
   const week = Math.max(1, Math.floor((now.getTime() - parseDay(s.startDate).getTime()) / 6048e5) + 1)
   const r = s.readiness[todayKey]
@@ -134,6 +136,14 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
       )}
 
       <section className="section">
+        <button className="tile row" onClick={() => setShowManual(true)}>
+          <span className="ico good"><Icon name="info" /></span>
+          <span className="grow"><span className="t">Exercise manual</span><div className="d">How to do each exercise, why it helps, and the basics of training safely</div></span>
+          <Icon name="play" size={16} />
+        </button>
+      </section>
+
+      <section className="section">
         <div className="section-head"><h2>Daily rhythm</h2><span className="tag">{plan.evening}</span></div>
         <div className="grid3">{miniTiles('rhythm')}</div>
         <button className="tile row" onClick={onBreathe}>
@@ -144,6 +154,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
       </section>
 
       {showPlan && <Plan onClose={() => setShowPlan(false)} />}
+      {showManual && <Manual onClose={() => setShowManual(false)} />}
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}
     </>
