@@ -53,7 +53,6 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
   const tapTimer = useRef<number | undefined>(undefined)
   const [ask, setAsk] = useState<Row | null>(null)
   const openEdit = (p: Planned, it?: ExerciseLog) => setEdit({ p, it: it ?? { id: p.ex.id, planned: p.sets, target: p.target, sets: Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })) } })
-  const findLog = (id: string) => s.sessions.find(x => x.date === sel)?.items.find(it => it.id === id && it.sets.length)
   const doneCount = rows.filter(x => x.it).length, allDone = rows.length > 0 && doneCount === rows.length
 
   const tick = (p: Planned) => {
