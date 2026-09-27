@@ -1,6 +1,7 @@
 import { WEEK } from '../data/catalog'
 import { Icon } from '../icons'
 import { useStore } from '../store'
+import { Page } from '../ui'
 
 // The whole program on one screen, for anyone new to it. Content follows the weekly blueprint PDF.
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -64,8 +65,7 @@ export default function Plan({ onClose }: { onClose: () => void }) {
   const timesFor = (d: number) => s.reminders.filter(r => r.on && r.days.includes(d)).sort((a, b) => a.time.localeCompare(b.time))
 
   return (
-    <div className="full"><div className="stack" style={{ gap: 0 }}>
-      <div className="row between"><button className="chip icon" aria-label="Close" onClick={onClose}><Icon name="back" size={16} /></button><span className="tag">Cal-X program</span><span style={{ width: 36 }} /></div>
+    <Page onClose={onClose} title="Cal-X program">
       <h1 style={{ marginTop: 14 }}>The weekly plan</h1>
       <p className="muted small" style={{ margin: '8px 0 0' }}>Three strength days, three yoga days and a full rest day. Every day opens and closes with breathing and meditation. Cal-X adjusts the calisthenics targets from how each session actually went.</p>
 
@@ -111,6 +111,6 @@ export default function Plan({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </section>
-    </div></div>
+    </Page>
   )
 }

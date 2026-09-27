@@ -5,6 +5,7 @@ import { buildSession } from '../engine/progression'
 import { Icon, exIcon } from '../icons'
 import { useStore } from '../store'
 import { NodeSheet } from './Skills'
+import { Page } from '../ui'
 
 /** How-to block for one exercise: why, steps, mistakes, breathing, easier/harder. */
 export function GuideBody({ ex }: { ex: Exercise }) {
@@ -46,8 +47,7 @@ export default function Manual({ onClose }: { onClose: () => void }) {
   const [open, setOpen] = useState<string | null>(null)
   const exercises = buildSession(s).map(p => p.ex)
   return (
-    <div className="full"><div className="stack" style={{ gap: 0 }}>
-      <div className="row between"><button className="chip icon" aria-label="Close" onClick={onClose}><Icon name="back" size={16} /></button><span className="tag">Exercise manual</span><span style={{ width: 36 }} /></div>
+    <Page onClose={onClose} title="Exercise manual">
       <h1 style={{ marginTop: 14 }}>Train well, stay healthy</h1>
       <p className="muted small" style={{ margin: '8px 0 0' }}>New to training? Start with the basics below, then tap any exercise to learn how to do it safely.</p>
 
@@ -73,6 +73,6 @@ export default function Manual({ onClose }: { onClose: () => void }) {
         </div>
       </section>
       {open && <NodeSheet id={open} onClose={() => setOpen(null)} />}
-    </div></div>
+    </Page>
   )
 }

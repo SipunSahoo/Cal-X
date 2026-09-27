@@ -91,6 +91,18 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done
 - [ ] Performance, offline edge cases, storage-eviction warning + backup reminder
 - [ ] UX consistency pass
 
+## Phase 8 — Gym mode (planned, not started)
+Goal: people who train in a gym get the same coaching loop (plan → log → auto-progress → unlocks → progress), with weights instead of bodyweight skills. Breathing, yoga check-offs, body tracking, reminders and backup stay shared.
+
+- [ ] **G1 · Setup:** onboarding asks training style (Calisthenics / Gym / Mixed) and gym access; a 1-minute strength check (e.g. "a weight you can lift 10 times") sets starting loads
+- [ ] **G2 · Lift catalogue:** 6 movement tracks, each from machine/dumbbell to barbell: Squat (leg press → goblet → back squat), Hinge (RDL → deadlift), Horizontal push (DB press → bench), Vertical push (DB press → OHP), Horizontal pull (cable/DB row → barbell row), Vertical pull (lat pulldown → assisted → pull-up); plus arms, calves, core
+- [ ] **G3 · Programs:** beginner full body 3×/week (fits Mon/Wed/Fri), then upper/lower 4×/week, later push/pull/legs; exercise swap for busy machines
+- [ ] **G4 · Weight progression rules:** double progression with load (reach top of rep range on all sets → +2.5 kg upper / +5 kg lower); 2 missed sessions → deload 10%; same effort (RPE) and readiness rules as now
+- [ ] **G5 · Workout player:** weight field per set (prefilled), auto warm-up sets (empty bar ×10, 50% ×5, 70% ×3), plate calculator, longer rest for big lifts (2–3 min)
+- [ ] **G6 · Strength levels instead of skill unlocks:** standards relative to bodyweight (e.g. bench 0.5× → 0.75× → 1× → 1.25× → 1.5× BW) using the weight already tracked in Body; estimated 1-rep-max charts
+- [ ] **G7 · Manual:** gym basics (bracing, safe bar path, choosing a starting weight, using safety pins / a spotter, gym etiquette) + a how-to for each lift
+- [ ] **Mixed mode:** calisthenics skills for upper body + gym lifts for legs and back
+
 ## Phase 7 — Yoga module (future)
 - [ ] Yoga session templates per blueprint day
 - [ ] Pose library + hold tracking

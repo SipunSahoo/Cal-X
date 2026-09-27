@@ -83,7 +83,7 @@ export default function Onboarding() {
   ]
 
   return (
-    <div className="full"><div className="stack" style={{ minHeight: '100%', gap: 16 }}>
+    <div className="full focus"><div className="stack" style={{ minHeight: '100%', gap: 16 }}>
       {pages[step]}
       <div className="grow" />
       <div className="row">

@@ -80,7 +80,7 @@ export default function Workout({ onClose }: { onClose: () => void }) {
     const left = Math.max(0, Math.ceil((restEnd - Date.now()) / 1000))
     const n = items[i]
     return (
-      <div className="full"><div className="stack" style={{ minHeight: '100%', justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 18 }}>
+      <div className="full focus"><div className="stack" style={{ minHeight: '100%', justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 18 }}>
         <div className="tag">Rest</div>
         <div className="num" style={{ fontSize: 120, lineHeight: 1, fontWeight: 800 }}>{Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</div>
         <div className="muted">Next: {n.ex.name}, set {logs[i].length + 1} · {n.target}{unit(n.ex) || ' reps'}</div>
@@ -94,7 +94,7 @@ export default function Workout({ onClose }: { onClose: () => void }) {
 
   const holding = holdStart !== null
   return (
-    <div className="full"><div className="stack" style={{ gap: 16 }}>
+    <div className="full focus"><div className="stack" style={{ gap: 16 }}>
       <div className="row between">
         {confirmQuit
           ? <span className="row"><button className="chip" style={{ color: 'var(--bad)' }} onClick={onClose}>Discard workout</button><button className="chip" onClick={() => setConfirmQuit(false)}>Keep going</button></span>
@@ -178,7 +178,7 @@ function Summary({ minutes, results, onDone }: { minutes: number; results: { p: 
     onDone()
   }
   return (
-    <div className="full"><div className="stack" style={{ gap: 14 }}>
+    <div className="full focus"><div className="stack" style={{ gap: 14 }}>
       <div className="tag">Session complete · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1>Logged.</h1>
       <div className="stats">
         {[[minutes, 'minutes'], [results.reduce((a, r) => a + r.sets.length, 0), 'sets'], [prs.length, 'records']].map(([v, l]) =>

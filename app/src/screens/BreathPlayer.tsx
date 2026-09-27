@@ -92,7 +92,7 @@ export default function BreathPlayer({ seq, onClose }: { seq: BreathSequence; on
   const color = sg.kind === 'rest' ? 'var(--muted)' : 'var(--breath)'
 
   if (done) return (
-    <div className="full"><div className="stack" style={{ minHeight: '100%', justifyContent: 'center', gap: 18 }}>
+    <div className="full focus"><div className="stack" style={{ minHeight: '100%', justifyContent: 'center', gap: 18 }}>
       <div className="tag">Complete</div>
       <h1 style={{ fontSize: 40 }}>{seq.name}</h1>
       <div className="stats"><div className="stat"><div className="num">{mmss(total - GET_READY)}</div><div className="tag">Breathing time</div></div>
@@ -102,7 +102,7 @@ export default function BreathPlayer({ seq, onClose }: { seq: BreathSequence; on
   )
 
   return (
-    <div className="full"><div className="stack" style={{ minHeight: '100%', gap: 14 }}>
+    <div className="full focus"><div className="stack" style={{ minHeight: '100%', gap: 14 }}>
       <div className="row between">
         <button className="chip icon" aria-label="Close" onClick={onClose}><Icon name="close" size={16} /></button>
         <span className="tag">{sg.step < 0 ? seq.name : `Step ${sg.step + 1} of ${stepCount}`}</span>

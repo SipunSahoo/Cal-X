@@ -1,10 +1,68 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+
+/**
+ * Drag-to-close. 'y': drag a sheet down (only when scrolled to the top).
+ * 'x': swipe right starting at the left edge, like iOS back navigation.
+ */
+export function useSwipeClose<T extends HTMLElement>(onClose: () => void, axis: 'x' | 'y') {
+  const ref = useRef<T>(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let start: { x: number; y: number } | null = null, d = 0, locked = false
+    const set = (px: number) => { el.style.transform = px ? (axis === 'x' ? `translateX(${px}px)` : `translateY(${px}px)`) : '' }
+    const down = (e: TouchEvent) => {
+      const t = e.touches[0]
+      if (axis === 'x' ? t.clientX > 32 : el.scrollTop > 0) return
+      start = { x: t.clientX, y: t.clientY }; d = 0; locked = false; el.style.transition = 'none'
+    }
+    const move = (e: TouchEvent) => {
+      if (!start) return
+      const t = e.touches[0], dx = t.clientX - start.x, dy = t.clientY - start.y
+      const along = axis === 'x' ? dx : dy, across = axis === 'x' ? dy : dx
+      if (!locked) { if (Math.abs(along) + Math.abs(across) < 8) return; if (along <= 0 || Math.abs(across) > Math.abs(along)) { start = null; return } locked = true }
+      d = Math.max(0, along); set(d)
+    }
+    const up = () => {
+      if (!start) return
+      start = null; el.style.transition = 'transform .2s ease'
+      if (d > 90) close.current(); else set(0)
+    }
+    el.addEventListener('touchstart', down, { passive: true })
+    el.addEventListener('touchmove', move, { passive: true })
+    el.addEventListener('touchend', up)
+    el.addEventListener('touchcancel', up)
+    return () => { el.removeEventListener('touchstart', down); el.removeEventListener('touchmove', move); el.removeEventListener('touchend', up); el.removeEventListener('touchcancel', up) }
+  }, [axis])
+  return ref
+}
 
 export function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const ref = useSwipeClose<HTMLDivElement>(onClose, 'y')
   return (
     <div className="sheet-bg" onClick={onClose}>
-      <div className="sheet" role="dialog" onClick={e => e.stopPropagation()}>{children}</div>
+      <div className="sheet" role="dialog" ref={ref} onClick={e => e.stopPropagation()}>
+        <span className="grabber" aria-hidden="true" />
+        {children}
+      </div>
     </div>
+  )
+}
+
+/** Full page with back arrow and swipe-right-to-go-back. Stops above the tab bar. */
+export function Page({ onClose, title, children }: { onClose: () => void; title: string; children: ReactNode }) {
+  const ref = useSwipeClose<HTMLDivElement>(onClose, 'x')
+  return (
+    <div className="full" ref={ref}><div className="stack" style={{ gap: 0 }}>
+      <div className="row between">
+        <button className="chip" aria-label="Back" onClick={onClose} style={{ paddingLeft: 8 }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg> Back</button>
+        <span className="tag">{title}</span><span style={{ width: 60 }} />
+      </div>
+      {children}
+    </div></div>
   )
 }
 

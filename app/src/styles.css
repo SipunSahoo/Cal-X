@@ -9,7 +9,8 @@
   --breath: #86b8de; --good: #6cc08a; --warn: #e0973c; --bad: #e0664f; --locked: #3a3e48;
   --accent-soft: rgba(232, 179, 60, .14); --breath-soft: rgba(134, 184, 222, .14); --good-soft: rgba(108, 192, 138, .14); --muted-soft: rgba(141, 145, 155, .12);
   --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
-  --tabs-h: 58px; --r: 16px;
+  --tabs-h: 58px; --tabs-pad: 6px; --r: 16px;
+  --above-tabs: calc(var(--tabs-h) + var(--tabs-pad)); /* pages and sheets stop here so the tab bar stays usable */
 }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
   color-scheme: light;
@@ -39,12 +40,13 @@ a { color: inherit }
 .screen { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 28px }
 .screen > * { max-width: 520px; margin-inline: auto }
-.full { position: fixed; inset: 0; z-index: 5; background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
+.full { position: fixed; inset: 0 0 var(--above-tabs); z-index: 5; background: var(--bg); overflow-y: auto; overscroll-behavior: contain;
   padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 20px) }
 .full > * { max-width: 520px; margin-inline: auto; width: 100% }
+.full.focus { bottom: 0; z-index: 40 } /* workout, breathing, setup: cover the tab bar so a stray tap cannot end a session */
+.focus .sheet-bg { bottom: 0 }
 
-.tabs { flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  --tabs-pad: 6px; /* iOS already keeps the home-indicator strip out of the page, so no extra inset */
+.tabs { position: relative; z-index: 25; flex: none; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   height: calc(var(--tabs-h) + var(--tabs-pad)); padding-bottom: var(--tabs-pad);
   background: var(--bg); border-top: 1px solid var(--line) }
 .tabs button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 500; color: var(--muted) }
@@ -117,7 +119,8 @@ h2 { font-size: 19px; line-height: 1.15; font-stretch: 104% }
 .scroll-x { overflow-x: auto; padding-bottom: 4px; scrollbar-width: none }
 
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px) + 14px); z-index: 30; max-width: 488px; margin: 0 auto; background: var(--text); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-weight: 600; font-size: 14px }
-.sheet-bg { position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 20; display: flex; align-items: flex-end; justify-content: center }
+.sheet-bg { position: fixed; inset: 0 0 var(--above-tabs); background: rgba(0, 0, 0, .55); z-index: 20; display: flex; align-items: flex-end; justify-content: center }
+.grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--line-2); margin: -8px auto 0; flex: none }
 .sheet { background: var(--panel); width: 100%; max-width: 520px; border-radius: 22px 22px 0 0; padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 28px); max-height: 88%; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 14px }
 @media (prefers-reduced-motion: no-preference) {
   .sheet { animation: up .22s cubic-bezier(.2, .8, .2, 1) }
