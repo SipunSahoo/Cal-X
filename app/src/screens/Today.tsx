@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { CHECKS, EX, TIERS, TRACKS, WEEK } from '../data/catalog'
 import { addDays, buildSession, dayKey, lastSets, parseDay, readinessScore, targetOf, trainingNode, unit, type Decision, type ExerciseLog, type Planned } from '../engine/progression'
 import { logExercise, undoLog } from '../engine/log'
@@ -42,17 +42,20 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
 
   // each row = a planned exercise and, if logged that day, its log (a level-up today still shows the exercise you did)
   const logged = (doneSession?.items ?? []).filter(it => it.sets.length)
-  const rows: Row[] = isToday || !doneSession
+  const canLog = sel <= todayKey
+  const rows: Row[] = canLog || !doneSession
     ? ses.map(p => {
         const it = logged.find(l => l.id === p.ex.id || (p.ex.track && EX[l.id]?.track === p.ex.track))
         return it ? { p: { ex: EX[it.id], sets: it.planned, target: it.target }, it } : { p }
       })
     : doneSession.items.map(it => ({ p: { ex: EX[it.id], sets: it.planned, target: it.target }, it: it.sets.length ? it : undefined }))
+  const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 })
+  const findLog = (id: string) => s.sessions.find(x => x.date === sel)?.items.find(it => it.id === id && it.sets.length)
   const doneCount = rows.filter(x => x.it).length, allDone = rows.length > 0 && doneCount === rows.length
 
   const tick = (p: Planned) => {
     let d: Decision | undefined
-    setState(x => { const r = logExercise(x, todayKey, p, Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })), true); d = r.decision; return r.state })
+    setState(x => { const r = logExercise(x, sel, p, Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })), true); d = r.decision; return r.state })
     if (d) toast(d.advanceTo ? `Mastered! Next time: ${d.advanceTo.name}` : d.tag === 'Increase' ? `Done. Next target ${d.next}${unit(p.ex)}` : 'Done.')
   }
 
@@ -103,6 +106,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
             </div>
             <div className="bar"><i style={{ width: `${rows.length ? doneCount / rows.length * 100 : 0}%`, background: 'var(--good)' }} /></div>
             {allDone ? <div className="btn ghost" style={{ color: 'var(--good)' }}><Icon name="check" size={18} /> Completed</div>
+              : canLog && !isToday ? <div className="d" style={{ textAlign: 'center' }}>Missed logging this day? Tap each exercise you did.</div>
               : isToday ? <><button className="btn" onClick={onStart}><Icon name="play" size={18} /> {doneCount ? `Continue guided workout (${rows.length - doneCount} left)` : 'Start guided workout'}</button>
                   <div className="d" style={{ textAlign: 'center' }}>Or train your own way and tap each exercise when it's done.</div></>
               : <div className="d">{doneSession ? 'Logged on this day.' : 'Preview. Targets update after each session.'}</div>}
@@ -110,16 +114,23 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
           <div className="grid2">
             {rows.map(({ p, it }) => {
               const ex = p.ex, last = lastSets(s, ex.id)
-              const open = () => !isToday ? setSheet(ex.id) : it ? setEdit({ p, it }) : tick(p)
+              const open = () => {
+                if (!canLog) { setSheet(ex.id); toast('You can log this on the day.'); return }
+                const now = Date.now(), dbl = lastTap.current.id === ex.id && now - lastTap.current.t < 400
+                lastTap.current = { id: ex.id, t: now }
+                if (dbl) { const cur = findLog(ex.id); setEdit({ p, it: cur ?? { id: ex.id, planned: p.sets, target: p.target, sets: Array.from({ length: p.sets }, () => ({ value: p.target, rpe: 8 })) } }); return }
+                if (it) toast('Double-tap to change reps or unmark.')
+                else tick(p)
+              }
               return (
                 <div key={ex.id} className={`tile ${it ? 'on' : ''}`} role="button" tabIndex={0} aria-pressed={!!it}
-                  onClick={open} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }} style={{ cursor: 'pointer' }}>
+                  onClick={open} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }} style={{ cursor: 'pointer', touchAction: 'manipulation', userSelect: 'none' }}>
                   <span className="row between">
                     <span className={`ico sm ${it ? 'good' : ''}`}><Icon name={it ? 'check' : exIcon(ex)} size={18} /></span>
                     <span className="n" style={{ fontSize: 18, color: it ? 'var(--good)' : undefined }}>{it ? it.sets.map(x => x.value).join('·') : `${p.sets}×${p.target}${unit(ex)}`}</span>
                   </span>
                   <span><div className="t">{ex.name}</div>
-                    <div className="d">{it ? (isToday ? (it.quick ? 'Done as planned · tap to edit' : 'Logged · tap to edit') : 'Logged') : isToday ? (last ? `Tap when done · last ${last.join('·')}` : 'Tap when done') : TIERS[ex.tier]}</div></span>
+                    <div className="d">{it ? (it.quick ? 'Done as planned' : 'Logged') + ' · double-tap to edit' : canLog ? `Tap = done · double-tap = enter reps${last ? ` · last ${last.join('·')}` : ''}` : TIERS[ex.tier]}</div></span>
                   <button className="chip" style={{ alignSelf: 'flex-end', minHeight: 26, padding: '2px 10px', fontSize: 12 }} onClick={e => { e.stopPropagation(); setSheet(ex.id) }}>
                     <Icon name="info" size={13} /> How to</button>
                 </div>
@@ -179,7 +190,7 @@ export default function Today({ onStart, onBreathe }: { onStart: () => void; onB
 
       {showPlan && <Plan onClose={() => setShowPlan(false)} />}
       {showManual && <Manual onClose={() => setShowManual(false)} />}
-      {edit && <LogEdit row={edit} date={todayKey} onClose={() => setEdit(null)} />}
+      {edit && <LogEdit row={edit} date={sel} onClose={() => setEdit(null)} />}
       {sheet === 'checkin' && <CheckIn onClose={() => setSheet(null)} />}
       {sheet && sheet !== 'checkin' && <NodeSheet id={sheet} onClose={() => setSheet(null)} />}
     </>
